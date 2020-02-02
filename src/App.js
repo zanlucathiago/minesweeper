@@ -1,5 +1,6 @@
-import { FaBomb } from 'react-icons/fa';
-import { IoIosFlag } from 'react-icons/io';
+import { FaBomb, FaPlay, FaTools, FaStop } from 'react-icons/fa';
+import { IoIosFlag, IoMdHelp } from 'react-icons/io';
+// import { MdLiveHelp } from 'react-icons/md';
 import React from 'react';
 import './App.css';
 import Board from './Board.json';
@@ -7,13 +8,22 @@ import {
   Container,
   Grid,
   Button,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
+  // FormControl,
+  // FormLabel,
+  // RadioGroup,
+  // FormControlLabel,
+  // Radio,
+  IconButton,
+  Fab,
+  CircularProgress,
+  // Icon,
 } from '@material-ui/core';
+// import Icon from '@material-ui/core/Icon';
 import LocalStorage from './LocalStorage';
+import Stopwatch from './components/Stopwatch';
+import FeedbackDialog from './components/FeedbackDialog';
+import SetupDialog from './components/SetupDialog';
+import moment from 'moment';
 
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
@@ -29,18 +39,25 @@ export default class App extends React.Component {
     this.updateDimensions(size);
     this.state = {
       grid: this.generateGrid(),
+      running: false,
       size,
     };
   }
 
-  componentDidUpdate() {
-    if (this.status) {
-      alert(this.status);
-      this.status = null;
-      this.squaresOpened = 0;
-      this.setState({ grid: this.generateGrid() });
-    }
-  }
+  // componentDidUpdate(prevProps, prevState) {
+  // if (this.status) {
+  // if (prompt(this.status)) {
+  //   this.setState({ running: true });
+  // }
+  // this.status = null;
+  // this.squaresOpened = 0;
+  // this
+  // this.setState({ running: false, grid: this.generateGrid() });
+  // }
+  // if (this.state.loading && !prevState.loading) {
+  // this.calculate();
+  // }
+  // }
 
   generateGrid = () => {
     const grid = Array(this.rows)
@@ -96,19 +113,29 @@ export default class App extends React.Component {
   };
 
   recursiveOpener = (row, column) => {
-    const { grid } = this.state;
+    const { grid, running } = this.state;
     const currCell = grid[row][column];
-    if (!currCell.open && !currCell.flag) {
+    if (!currCell.open && !currCell.flag && running) {
       if (currCell.bomb) {
-        this.status = 'Você perdeu. Clique para recomeçar.';
+        // this.status = 'Você perdeu. Clique para recomeçar.';
+        this.setState({
+          running: false,
+          // dialog: 'feedback',
+          message: 'Você perdeu.',
+        });
       }
 
       currCell.open = true;
       this.totalGuesses = 0;
       this.squaresOpened++;
-      console.log(this.squaresOpened);
+      // console.log(this.squaresOpened);
       if (this.squaresOpened === this.rows * this.columns - this.bombs) {
-        this.status = 'Você venceu! Clique para recomeçar.';
+        // this.status = 'Você venceu! Clique para recomeçar.';
+        this.setState({
+          running: false,
+          // dialog: 'feedback',
+          message: 'Você venceu!.',
+        });
       }
       currCell.isWild = false;
       if (!currCell.number) {
@@ -131,8 +158,8 @@ export default class App extends React.Component {
     this.bombs = bombs;
   };
 
-  setChanges = (e) => {
-    const size = e.target.value;
+  setChanges = (size) => {
+    // const size = e.target.value;
     this.updateDimensions(size);
     LocalStorage.setLevel(size);
     this.setState({ grid: this.generateGrid(), size });
@@ -177,11 +204,12 @@ export default class App extends React.Component {
       }
     }
     this.checkValuesForNextCell(0, 0, 0, currGrid);
-    this.setState({ grid });
+    this.setState({ grid, loading: false });
+    // res();
   };
 
   product_Range(a, b) {
-    var prd = a,
+    let prd = a,
       i = a;
 
     while (i++ < b) {
@@ -295,38 +323,90 @@ export default class App extends React.Component {
   };
 
   render() {
-    const { grid } = this.state;
+    const { dialog, grid, loading, message, perf, running, size } = this.state;
     return (
-      <Container maxWidth="lg" style={{ marginTop: '4rem' }}>
+      <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
+        {dialog === 'feedback' && (
+          <FeedbackDialog
+            handleClose={() => this.setState({ dialog: null })}
+            message={`${message} Seu tempo foi ${moment()
+              // .hour(0)
+              .minute(0)
+              .second(0)
+              .millisecond(perf)
+              .format('mm:ss.SSS')}.`}
+          />
+        )}
+        {dialog === 'setup' && (
+          <SetupDialog
+            handleClose={() => this.setState({ dialog: null })}
+            setChanges={this.setChanges}
+            size={size}
+          />
+        )}
         <Grid container spacing={3} style={{ justifyContent: 'center' }}>
-          <Grid item style={{ margin: 'auto' }} xs={12}>
-            <FormControl component="fieldset">
-              <FormLabel component="legend">Nível</FormLabel>
-              <RadioGroup value={this.state.size} onChange={this.setChanges}>
-                <FormControlLabel
-                  value="sm"
-                  control={<Radio />}
-                  label="Fácil"
-                />
-                <FormControlLabel
-                  value="md"
-                  control={<Radio />}
-                  label="Médio"
-                />
-                <FormControlLabel
-                  value="lg"
-                  control={<Radio />}
-                  label="Difícil"
-                />
-              </RadioGroup>
-            </FormControl>
+          <Grid
+            item
+            style={{ margin: 'auto', textAlign: 'center' }}
+            xs={12}
+            sm={4}
+          >
+            <Stopwatch
+              openFeedback={(perf) =>
+                this.setState({ dialog: 'feedback', perf })
+              }
+              running={running}
+            />
+          </Grid>
+          <Grid
+            item
+            style={{ margin: 'auto', textAlign: 'center' }}
+            xs={12}
+            sm={4}
+          >
+            <Button
+              onClick={() => {
+                this.totalGuesses = 0;
+                this.setState(({ running }) => ({
+                  grid: running ? grid : this.generateGrid(),
+                  running: !running,
+                  message: running && 'Você perdeu.',
+                }));
+              }}
+              size="large"
+              variant="contained"
+              color="primary"
+              // className={classes.button}
+              endIcon={running ? <FaStop /> : <FaPlay />}
+              // startIcon={<FaPlay />}
+            >
+              {running ? 'Parar' : 'Iniciar'}
+            </Button>
+          </Grid>
+          <Grid
+            item
+            style={{ margin: 'auto', textAlign: 'center' }}
+            xs={12}
+            sm={4}
+          >
+            <IconButton
+              color="primary"
+              disabled={running}
+              onClick={() => this.setState({ dialog: 'setup' })}
+            >
+              <FaTools />
+            </IconButton>
           </Grid>
         </Grid>
-        <Grid item>
+        <Grid
+          item
+          style={{ margin: '1rem', marginBottom: '6rem', overflowY: 'hidden' }}
+        >
           <table
             style={{
               borderCollapse: 'collapse',
               margin: 'auto',
+              opacity: running ? 1 : 0.5,
               whiteSpace: 'nowrap',
             }}
           >
@@ -407,9 +487,46 @@ export default class App extends React.Component {
             </tbody>
           </table>
         </Grid>
-        <Button onClick={this.calculate} variant="contained">
-          Calcular
-        </Button>
+        <Fab
+          color="secondary"
+          style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
+          disabled={!running || loading}
+          // endIcon={<MdLiveHelp />}
+          onClick={() => {
+            // this.setState({ loading: true }, () => this.calculate());
+            this.setState({ loading: true });
+            setTimeout(this.calculate, 125);
+          }}
+        >
+          <IoMdHelp size={32} />
+        </Fab>
+        {loading && (
+          <CircularProgress
+            size={68}
+            style={{
+              // color: green[500],
+              position: 'fixed',
+              right: 26,
+              bottom: 26,
+              zIndex: 1,
+            }}
+          />
+        )}
+        {/* <Grid
+          item
+          style={{ margin: 'auto', textAlign: 'center', marginBottom: '2rem' }}
+          // xs={12}
+          // sm={4}
+        >
+          <Button
+            disabled={!running}
+            endIcon={<MdLiveHelp />}
+            onClick={this.calculate}
+            variant="contained"
+          >
+            Ajuda
+          </Button>
+        </Grid> */}
       </Container>
     );
   }
