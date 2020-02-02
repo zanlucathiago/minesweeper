@@ -1,0 +1,14 @@
+{
+  "sm": {
+    "bombs": 10,
+    "dimensions": [8, 8]
+  },
+  "md": {
+    "bombs": 40,
+    "dimensions": [16, 16]
+  },
+  "lg": {
+    "bombs": 99,
+    "dimensions": [16, 30]
+  }
+}
