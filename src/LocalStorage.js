@@ -13,7 +13,7 @@ class LocalStorage {
   getFromLocalStorage() {
     const data = localStorage.getItem(localStorageKey);
 
-    if (data !== 'undefined') {
+    if (data && data !== 'undefined') {
       return JSON.parse(data);
     }
 

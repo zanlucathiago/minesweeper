@@ -18,9 +18,9 @@ import LocalStorage from './LocalStorage';
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
 export default class App extends React.Component {
-  bombs = 5;
-  rows = 7;
-  columns = 7;
+  // bombs = 5;
+  // rows = 7;
+  // columns = 7;
   squaresOpened = 0;
 
   constructor(props) {
@@ -104,6 +104,7 @@ export default class App extends React.Component {
 
       currCell.open = true;
       this.squaresOpened++;
+      console.log(this.squaresOpened);
       if (this.squaresOpened === this.rows * this.columns - this.bombs) {
         this.status = 'Você venceu! Clique para recomeçar.';
       }
@@ -151,7 +152,7 @@ export default class App extends React.Component {
             if (currCell.isWild) {
               this.totalWild++;
             }
-            return 0;
+            return -1;
           }),
       );
     for (let i = 0; i < this.rows; i++) {
@@ -207,15 +208,15 @@ export default class App extends React.Component {
     if (!currCol && currRow === this.rows) {
       const wildBombs = this.bombs - currBombs;
       if (
-        wildBombs <= this.totalWild &&
-        currGrid.every((row, rowId) =>
-          row.every(
-            (cell, colId) =>
-              !grid[rowId][colId].open ||
-              this.iterateAround(rowId, colId, (x, y) => currGrid[x][y]) ===
-                grid[rowId][colId].number,
-          ),
-        )
+        wildBombs <= this.totalWild // &&
+        // currGrid.every((row, rowId) =>
+        //   row.every(
+        //     (cell, colId) =>
+        //       !grid[rowId][colId].open ||
+        //       this.iterateAround(rowId, colId, (x, y) => currGrid[x][y]) ===
+        //         grid[rowId][colId].number,
+        //   ),
+        // )
       ) {
         const wildCombinations = this.combinations(this.totalWild, wildBombs);
         currGrid.forEach((row, rowId) =>
@@ -231,16 +232,62 @@ export default class App extends React.Component {
         this.totalGuesses += wildCombinations;
       }
     } else {
-      if (!currGrid[currRow][currCol]) {
-        this.checkValuesForNextCell(currBombs, nextRow, nextCol, currGrid);
+      // let nextGrid;
+      // if (currGrid[currRow][currCol] < 1) {
+      // nextGrid = JSON.parse(JSON.stringify(currGrid));
+      let nextGrid = JSON.parse(JSON.stringify(currGrid));
+      nextGrid[currRow][currCol] = 0;
+      if (
+        currGrid[currRow][currCol] !== 1 &&
+        !this.checkAround(currRow, currCol, nextGrid)
+      ) {
+        this.checkValuesForNextCell(currBombs, nextRow, nextCol, nextGrid);
       }
+      // }
       const currCel = grid[currRow][currCol];
-      if (!currCel.open && currBombs < this.bombs && !currCel.isWild) {
-        const nextGrid = JSON.parse(JSON.stringify(currGrid));
+      if (
+        !currCel.open &&
+        currBombs < this.bombs &&
+        !currCel.isWild // &&
+        // currGrid[currRow][currCol]
+      ) {
+        nextGrid = JSON.parse(JSON.stringify(currGrid));
         nextGrid[currRow][currCol] = 1;
-        this.checkValuesForNextCell(currBombs + 1, nextRow, nextCol, nextGrid);
+        if (
+          currGrid[currRow][currCol] === 1 ||
+          !this.checkAround(currRow, currCol, nextGrid)
+        ) {
+          this.checkValuesForNextCell(
+            currBombs + 1,
+            nextRow,
+            nextCol,
+            nextGrid,
+          );
+        }
       }
     }
+  };
+
+  checkAround = (row, col, currGrid) => {
+    const { grid } = this.state;
+    // let error = false;
+    return this.iterateAround(row, col, (x, y) => {
+      if (grid[x][y].open && grid[x][y].number) {
+        if (
+          this.iterateAround(x, y, (a, b) =>
+            (!grid[a][b].open && currGrid[a][b] < 1) || grid[a][b].open ? 0 : 1,
+          ) <= grid[x][y].number &&
+          this.iterateAround(x, y, (a, b) =>
+            (!grid[a][b].open && !currGrid[a][b]) || grid[a][b].open ? 0 : 1,
+          ) >= grid[x][y].number
+        ) {
+          return 0;
+        } else {
+          return 1;
+        }
+      }
+      return 0;
+    });
   };
 
   render() {
@@ -270,70 +317,91 @@ export default class App extends React.Component {
               </RadioGroup>
             </FormControl>
           </Grid>
-          <Grid item>
-            <table style={{ borderCollapse: 'collapse', margin: 'auto' }}>
-              <tbody>
-                {grid.map((row, idRow) => (
-                  <tr key={idRow}>
-                    {row.map((cell, idCell) => (
-                      <td
-                        key={idCell}
-                        onClick={() => {
-                          this.recursiveOpener(idRow, idCell);
-                          this.setState({ grid });
-                        }}
-                        onContextMenu={(e) => {
-                          cell.flag = !cell.flag;
-                          this.setState({ grid });
-                          e.preventDefault();
-                        }}
-                        style={{
-                          backgroundColor: '#bdbdbd',
-                          boxShadow: cell.open
-                            ? 'inset 1px 1px 4px 1px #777'
-                            : 'inset -1px -1px 4px 1px #333',
-                          textAlign: 'center',
-                          width: '2rem',
-                          height: '2rem',
-                          display: 'inline-block',
-                        }}
-                      >
-                        {cell.open ? (
-                          cell.bomb ? (
-                            <FaBomb
-                              size={22}
-                              style={{ margin: '0.25rem 0 0 0' }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                color: colors[cell.number],
-                                fontSize: '1.41rem',
-                                marginTop: '0.125rem',
-                              }}
-                            >
-                              <b>{cell.number || ''}</b>
-                            </div>
-                          )
-                        ) : cell.flag ? (
-                          <IoIosFlag
+        </Grid>
+        <Grid item>
+          <table
+            style={{
+              borderCollapse: 'collapse',
+              margin: 'auto',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <tbody>
+              {grid.map((row, idRow) => (
+                <tr
+                  key={idRow}
+                  // style={{ whiteSpace: 'nowrap', position: 'absolute' }}
+                  // style={{ whiteSpace: 'nowrap', position: 'absolute' }}
+                >
+                  {row.map((cell, idCell) => (
+                    <td
+                      key={idCell}
+                      onClick={() => {
+                        this.recursiveOpener(idRow, idCell);
+                        this.setState({ grid });
+                      }}
+                      onContextMenu={(e) => {
+                        cell.flag = !cell.flag;
+                        this.setState({ grid });
+                        e.preventDefault();
+                      }}
+                      style={{
+                        backgroundColor: '#bdbdbd',
+                        boxShadow: cell.open
+                          ? 'inset 1px 1px 4px 1px #777'
+                          : 'inset -1px -1px 4px 1px #333',
+                        textAlign: 'center',
+                        width: '2rem',
+                        height: '2rem',
+                        display: 'inline-block',
+                      }}
+                    >
+                      {cell.open ? (
+                        cell.bomb ? (
+                          <FaBomb
                             size={22}
-                            style={{
-                              color: 'red',
-                              margin: '0.25rem 0 0 0',
-                            }}
+                            style={{ margin: '0.25rem 0 0 0' }}
                           />
                         ) : (
-                          cell.guessBomb &&
-                          Math.round((100 * cell.guessBomb) / this.totalGuesses)
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Grid>
+                          <div
+                            style={{
+                              color: colors[cell.number],
+                              fontSize: '1.41rem',
+                              marginTop: '0.125rem',
+                            }}
+                          >
+                            <b>{cell.number || ''}</b>
+                          </div>
+                        )
+                      ) : cell.flag ? (
+                        <IoIosFlag
+                          size={22}
+                          style={{
+                            color: 'red',
+                            margin: '0.25rem 0 0 0',
+                          }}
+                        />
+                      ) : (
+                        Number.isInteger(cell.guessBomb) && (
+                          <div
+                            style={{
+                              // color: colors[cell.number],
+                              // fontSize: '1.41rem',
+                              marginTop: '0.375rem',
+                            }}
+                          >
+                            {Math.round(
+                              (100 * cell.guessBomb) / this.totalGuesses,
+                            )}
+                          </div>
+                        )
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Grid>
         <Button onClick={this.calculate} variant="contained">
           Calcular
