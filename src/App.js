@@ -51,6 +51,7 @@ export default class App extends React.Component {
           .map(() => ({
             bomb: false,
             flag: false,
+            guessBomb: 0,
             number: 0,
             open: false,
             isWild: true,
@@ -103,6 +104,7 @@ export default class App extends React.Component {
       }
 
       currCell.open = true;
+      this.totalGuesses = 0;
       this.squaresOpened++;
       console.log(this.squaresOpened);
       if (this.squaresOpened === this.rows * this.columns - this.bombs) {
@@ -135,6 +137,8 @@ export default class App extends React.Component {
     LocalStorage.setLevel(size);
     this.setState({ grid: this.generateGrid(), size });
   };
+
+  totalGuesses = 0;
 
   calculate = () => {
     this.iterations = 0;
@@ -381,21 +385,21 @@ export default class App extends React.Component {
                             margin: '0.25rem 0 0 0',
                           }}
                         />
-                      ) : (
-                        Number.isInteger(cell.guessBomb) && (
-                          <div
-                            style={{
-                              // color: colors[cell.number],
-                              // fontSize: '1.41rem',
-                              marginTop: '0.375rem',
-                            }}
-                          >
-                            {Math.round(
-                              (100 * cell.guessBomb) / this.totalGuesses,
-                            )}
-                          </div>
-                        )
-                      )}
+                      ) : this.totalGuesses ? (
+                        <div
+                          style={{
+                            // color: `rgba(0,0,0,${cell.guessBomb /
+                            // this.totalGuesses})`,
+                            color: '#777',
+                            // fontSize: '1.41rem',
+                            marginTop: '0.375rem',
+                          }}
+                        >
+                          {Math.round(
+                            (100 * cell.guessBomb) / this.totalGuesses,
+                          )}
+                        </div>
+                      ) : null}
                     </td>
                   ))}
                 </tr>
