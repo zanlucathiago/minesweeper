@@ -366,6 +366,7 @@ export default class App extends React.Component {
           >
             <Button
               onClick={() => {
+                this.squaresOpened = 0;
                 this.totalGuesses = 0;
                 this.setState(({ running }) => ({
                   grid: running ? grid : this.generateGrid(),
