@@ -4,8 +4,6 @@ import React, { Component } from 'react';
 import {
   Button,
   DialogActions,
-  // DialogContentText,
-  // DialogContent,
   DialogTitle,
   Dialog,
   DialogContent,
@@ -16,104 +14,192 @@ import {
   TableCell,
   TableBody,
   Paper,
-  CircularProgress,
+  DialogContentText,
+  Grid,
+  IconButton,
+  Typography,
+  Divider,
 } from '@material-ui/core';
+import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+import { FaGlobeAmericas, FaInfinity, FaQuestionCircle } from 'react-icons/fa';
+import LocalStorage from '../LocalStorage';
+import Progress from './Progress';
+import 'moment/locale/pt-br';
+import Alert from './Alert';
 
-// function createData(name, calories, fat, carbs, protein) {
-//   return { name, calories, fat, carbs, protein };
-// }
+moment.locale('pt-br');
 
-// const data = [
-//   createData('Frozen yoghurt', 159, 6.0, 24, 4.0),
-//   createData('Ice cream sandwich', 237, 9.0, 37, 4.3),
-//   createData('Eclair', 262, 16.0, 24, 6.0),
-//   createData('Cupcake', 305, 3.7, 67, 4.3),
-//   createData('Gingerbread', 356, 16.0, 49, 3.9),
-// ];
 export class FeedbackDialog extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      data: null,
+      formats: LocalStorage.getFormats(),
+      data: [],
+      loading: true,
     };
   }
+
+  handleFormat = (e, newFormats) => {
+    this.fetchRecords(newFormats);
+    LocalStorage.setFormats(newFormats);
+    this.setState({ formats: newFormats, loading: true });
+  };
+
+  fetchRecords = (newFormats) => {
+    Actions.getRecords(newFormats)
+      .then(({ data }) => this.setState({ data, loading: false }))
+      .catch(({ response }) =>
+        this.setState({
+          alert: response ? response.data : 'Estamos com problemas no servidor',
+          loading: false,
+        }),
+      );
+  };
 
   handleClose = () => {
     this.props.handleClose();
   };
 
   componentDidMount() {
-    Actions.getRecords({ level: '5e3764bcd0239c2c672d1834' })
-      .then(({ data }) => this.setState({ data }))
-      .catch((err) => {
-        console.error(err);
-      });
+    const { formats } = this.state;
+    this.fetchRecords(formats);
   }
 
   render() {
-    const { data } = this.state;
+    const { alert, alertInfo, data, formats, loading } = this.state;
+    const { content, title } = this.props;
     return (
-      <Dialog
-        disableBackdropClick
-        open={true}
-        onClose={this.handleClose}
-        // aria-labelledby="alert-dialog-title"
-        // aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">{this.props.message}</DialogTitle>
+      <Dialog open={true} onClose={this.handleClose}>
+        {alert && (
+          <Alert
+            onClose={() => this.setState({ alert: null })}
+            severity="error"
+          >
+            {alert}
+          </Alert>
+        )}
+        {alertInfo && (
+          <Alert
+            autoHideDuration={9000}
+            icon={false}
+            onClose={() => this.setState({ alertInfo: null })}
+            severity="info"
+          >
+            {alertInfo}
+          </Alert>
+        )}
+        {loading && <Progress />}
+        <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
         <DialogContent>
-          {/* <DialogContentText id="alert-dialog-description">
-            Let Google help apps determine location. This means sending
-            anonymous location data to Google, even when no apps are running.
-          </DialogContentText> */}
+          {content && (
+            <DialogContentText id="alert-dialog-description">
+              {content}
+            </DialogContentText>
+          )}
+          <Grid
+            style={{
+              marginBottom: 8,
+              position: 'relative',
+              textAlign: 'center',
+            }}
+          >
+            <ToggleButtonGroup value={formats} onChange={this.handleFormat}>
+              <ToggleButton style={{ height: 32 }} value="player">
+                <FaGlobeAmericas />
+              </ToggleButton>
+              <ToggleButton style={{ height: 32 }} value="date">
+                <FaInfinity />
+              </ToggleButton>
+            </ToggleButtonGroup>
+            <IconButton
+              onClick={() =>
+                this.setState({
+                  alertInfo: (
+                    <Grid container>
+                      <Grid
+                        item
+                        xs="2"
+                        style={{ margin: 'auto', textAlign: 'center' }}
+                      >
+                        <FaGlobeAmericas />
+                      </Grid>
+                      <Grid item xs="10">
+                        <Typography>
+                          Escolher entre listar recordes pessoais ou de todos os
+                          jogadores.
+                        </Typography>
+                      </Grid>
+                      <Grid item xs="12">
+                        <Divider
+                          style={{ backgroundColor: '#FFF', margin: 8 }}
+                          variant="middle"
+                        />
+                      </Grid>
+                      <Grid
+                        item
+                        xs="2"
+                        style={{ margin: 'auto', textAlign: 'center' }}
+                      >
+                        <FaInfinity />
+                      </Grid>
+                      <Grid item xs="10">
+                        <Typography>
+                          Escolher entre listar recordes do último dia ou de
+                          todos os dias.
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  ),
+                })
+              }
+              style={{ position: 'absolute', padding: 4, right: 0 }}
+            >
+              <FaQuestionCircle />
+            </IconButton>
+          </Grid>
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell align="right">#</TableCell>
                   <TableCell>Jogador</TableCell>
                   <TableCell align="right">Tempo</TableCell>
                   <TableCell align="right">Data</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data ? (
-                  data.map((row) => (
-                    <TableRow key={row.name}>
-                      <TableCell component="th" scope="row">
-                        {row.player
-                          ? row.player.name
-                          : 'Jogador não encontrado'}
-                      </TableCell>
-                      <TableCell align="right">
-                        {moment()
-                          .minute(0)
-                          .second(0)
-                          .millisecond(row.performance)
-                          .format('mm:ss.SSS')}
-                      </TableCell>
-                      <TableCell align="right">
-                        {moment(row.date).format('DD/MM/YYYY')}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <CircularProgress />
-                )}
+                {data.map((row, index) => (
+                  <TableRow key={row.name}>
+                    <TableCell align="right">{index + 1}</TableCell>
+                    <TableCell component="th" scope="row">
+                      {row.player && row.player.name}
+                    </TableCell>
+                    <TableCell align="right">
+                      {moment()
+                        .minute(0)
+                        .second(0)
+                        .millisecond(row.performance)
+                        .format('mm:ss.SSS')}
+                    </TableCell>
+                    <TableCell align="right">
+                      {/* {moment(row.date).format('DD/MM/YYYY HH:mm')} */}
+                      {moment(row.date).calendar()}
+                      {/* {moment(row.date).format('LLLL')} */}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>
         </DialogContent>
         <DialogActions>
-          {/* <Button onClick={this.handleClose} color="primary">
-            Disagree
-          </Button> */}
           <Button
-            onClick={Actions.addRecord}
+            onClick={this.handleClose}
             color="primary"
             autoFocus
             variant="contained"
           >
-            Enviar
+            Fechar
           </Button>
         </DialogActions>
       </Dialog>

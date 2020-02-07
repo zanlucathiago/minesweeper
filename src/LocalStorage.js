@@ -8,12 +8,20 @@ class LocalStorage {
     return this.getFromLocalStorage().level || 'sm';
   }
 
+  getFormats() {
+    return this.getFromLocalStorage().formats || [];
+  }
+
   setPlayer(value) {
     this.setToLocalStorage('player', value);
   }
 
   setLevel(value) {
     this.setToLocalStorage('level', value);
+  }
+
+  setFormats(value) {
+    this.setToLocalStorage('formats', value);
   }
 
   setToLocalStorage(key, value) {

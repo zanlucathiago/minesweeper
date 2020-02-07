@@ -48,17 +48,14 @@ export class Stopwatch extends Component {
     this.counter = 0;
     clearInterval(this.runClock);
     this.setState({ running: false, time: this.formatTime(0) });
-    this.props.openFeedback(this.endTime - this.startTime);
-    // alert(
-    //   `${this.startTime} - ${this.endTime} - ${this.endTime - this.startTime}`,
-    // );
+    // this.props.openFeedback(this.endTime - this.startTime);
+    this.props.saveRecord(this.endTime - this.startTime);
   }
 
   render() {
     return (
       <TextField
         disabled
-        // id="outlined-disabled"
         label="Tempo"
         style={{ width: 108 }}
         value={this.state.time}

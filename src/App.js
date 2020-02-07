@@ -1,4 +1,11 @@
-import { FaBomb, FaPlay, FaTools, FaStop } from 'react-icons/fa';
+import {
+  FaBomb,
+  FaPlay,
+  FaTools,
+  FaStop,
+  FaListOl,
+  FaQuestionCircle,
+} from 'react-icons/fa';
 import { IoIosFlag, IoMdHelp } from 'react-icons/io';
 import React from 'react';
 import './App.css';
@@ -10,6 +17,9 @@ import {
   IconButton,
   Fab,
   CircularProgress,
+  Typography,
+  Toolbar,
+  AppBar,
 } from '@material-ui/core';
 import LocalStorage from './LocalStorage';
 import Stopwatch from './components/Stopwatch';
@@ -17,6 +27,9 @@ import FeedbackDialog from './components/FeedbackDialog';
 import SetupDialog from './components/SetupDialog';
 import moment from 'moment';
 import LoginDialog from './components/LoginDialog';
+import Actions from './Actions';
+import Progress from './components/Progress';
+import Alert from './components/Alert';
 
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
@@ -27,9 +40,11 @@ export default class App extends React.Component {
     super(props);
     const size = LocalStorage.getLevel();
     this.updateDimensions(size);
+    const player = LocalStorage.getPlayer();
     this.state = {
-      dialog: 'login',
+      dialog: !player && 'login',
       grid: this.generateGrid(),
+      player,
       running: false,
       size,
     };
@@ -92,20 +107,22 @@ export default class App extends React.Component {
     const { grid, running } = this.state;
     const currCell = grid[row][column];
     if (!currCell.open && !currCell.flag && running) {
+      currCell.open = true;
       if (currCell.bomb) {
-        this.setState({
+        this.squaresOpened = 0;
+        return this.setState({
           running: false,
-          message: 'Você perdeu.',
+          victory: false,
         });
       }
 
-      currCell.open = true;
       this.totalGuesses = 0;
       this.squaresOpened++;
       if (this.squaresOpened === this.rows * this.columns - this.bombs) {
-        this.setState({
+        this.squaresOpened = 0;
+        return this.setState({
           running: false,
-          message: 'Você venceu!.',
+          victory: true,
         });
       }
       currCell.isWild = false;
@@ -174,7 +191,7 @@ export default class App extends React.Component {
       }
     }
     this.checkValuesForNextCell(0, 0, 0, currGrid);
-    this.setState({ grid, loading: false });
+    this.setState({ grid, thinking: false });
   };
 
   product_Range(a, b) {
@@ -271,186 +288,311 @@ export default class App extends React.Component {
     });
   };
 
+  closeDialogs = () => {
+    this.setState({ dialog: null });
+  };
+
   render() {
-    const { dialog, grid, loading, message, perf, running, size } = this.state;
+    const {
+      alert,
+      alertInfo,
+      alertSuccess,
+      dialog,
+      grid,
+      loading,
+      player,
+      thinking,
+      performance,
+      running,
+      size,
+      victory,
+    } = this.state;
     return (
-      <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
-        {dialog === 'login' && <LoginDialog />}
-        {dialog === 'feedback' && (
-          <FeedbackDialog
-            handleClose={() => this.setState({ dialog: null })}
-            message={`${message} Seu tempo foi ${moment()
-              .minute(0)
-              .second(0)
-              .millisecond(perf)
-              .format('mm:ss.SSS')}.`}
-          />
-        )}
-        {dialog === 'setup' && (
-          <SetupDialog
-            handleClose={() => this.setState({ dialog: null })}
-            setChanges={this.setChanges}
-            size={size}
-          />
-        )}
-        <Grid container spacing={3} style={{ justifyContent: 'center' }}>
-          <Grid
-            item
-            style={{ margin: 'auto', textAlign: 'center' }}
-            xs={12}
-            sm={4}
-          >
-            <Stopwatch
-              openFeedback={(perf) =>
-                this.setState({ dialog: 'feedback', perf })
-              }
-              running={running}
-            />
-          </Grid>
-          <Grid
-            item
-            style={{ margin: 'auto', textAlign: 'center' }}
-            xs={12}
-            sm={4}
-          >
-            <Button
-              onClick={() => {
-                this.squaresOpened = 0;
-                this.totalGuesses = 0;
-                this.setState(({ running }) => ({
-                  grid: running ? grid : this.generateGrid(),
-                  running: !running,
-                  message: running && 'Você perdeu.',
-                }));
+      <div>
+        {/* <AppBar position="static"> */}
+        {/* <Toolbar> */}
+        {/* <IconButton
+              edge="start"
+              className={classes.menuButton}
+              color="inherit"
+              aria-label="menu"
+            >
+              <MenuIcon />
+            </IconButton> */}
+        {/* {dialog !== 'login' && ( */}
+        {/* <Typography variant="h6">{`Jogador(a): ${player.name}`}</Typography> */}
+        {/* )} */}
+        {/* <Button color="inherit">Login</Button> */}
+        {/* </Toolbar> */}
+        {/* </AppBar> */}
+        <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
+          {alert && (
+            <Alert
+              onClose={() => this.setState({ alert: null })}
+              severity="error"
+            >
+              {alert}
+            </Alert>
+          )}
+          {alertSuccess && (
+            <Alert
+              onClose={() => this.setState({ alertSuccess: null })}
+              severity="success"
+            >
+              {alertSuccess}
+            </Alert>
+          )}
+          {alertInfo && (
+            <Alert
+              autoHideDuration={21000}
+              onClose={() => this.setState({ alertInfo: null })}
+              severity="info"
+              vertical="top"
+            >
+              {alertInfo}
+            </Alert>
+          )}
+          {loading && <Progress />}
+          {dialog === 'login' && (
+            <LoginDialog
+              onStart={(player) => {
+                this.setState({ alertSuccess: 'Bom jogo!', player });
+                LocalStorage.setPlayer(player);
+                this.closeDialogs();
               }}
-              size="large"
-              variant="contained"
-              color="primary"
-              endIcon={running ? <FaStop /> : <FaPlay />}
+            />
+          )}
+          {dialog === 'feedback' && (
+            <FeedbackDialog
+              handleClose={this.closeDialogs}
+              title={`${victory ? 'Você venceu!' : 'Tabela de recordes!'}`}
+              content={
+                victory &&
+                `Tempo: ${
+                  performance
+                    ? moment()
+                        .minute(0)
+                        .second(0)
+                        .millisecond(performance)
+                        .format('mm:ss.SSS')
+                    : '01:23:456'
+                }`
+              }
+            />
+          )}
+          {dialog === 'setup' && (
+            <SetupDialog
+              handleClose={this.closeDialogs}
+              setChanges={this.setChanges}
+              size={size}
+            />
+          )}
+          <Grid container spacing={3} style={{ justifyContent: 'center' }}>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={12}
+              sm={4}
             >
-              {running ? 'Parar' : 'Iniciar'}
-            </Button>
+              <Stopwatch
+                saveRecord={(performance) => {
+                  const { victory } = this.state;
+                  // this.setState({ dialog: 'feedback', perf })
+                  if (victory) {
+                    Actions.addRecord({
+                      player,
+                      performance,
+                      level: LocalStorage.getLevel(),
+                    }).then(() => {
+                      this.setState({ dialog: 'feedback', loading: false });
+                    });
+                    this.setState({ loading: true, performance });
+                  } else {
+                    this.setState({ alert: 'Jogo encerrado.' });
+                  }
+                }}
+                running={running}
+              />
+            </Grid>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={12}
+              sm={4}
+            >
+              <Button
+                onClick={() => {
+                  this.squaresOpened = 0;
+                  this.totalGuesses = 0;
+                  this.setState(({ running }) => ({
+                    grid: running ? grid : this.generateGrid(),
+                    running: !running,
+                    victory: false,
+                  }));
+                }}
+                size="large"
+                variant="contained"
+                color="primary"
+                endIcon={running ? <FaStop /> : <FaPlay />}
+              >
+                {running ? 'Parar' : 'Iniciar'}
+              </Button>
+            </Grid>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={12}
+              sm={4}
+            >
+              <IconButton
+                color="primary"
+                // disabled={running}
+                onClick={() =>
+                  this.setState({ dialog: 'feedback', victory: false })
+                }
+              >
+                <FaListOl />
+              </IconButton>
+              <IconButton
+                color="primary"
+                disabled={running}
+                onClick={() => this.setState({ dialog: 'setup' })}
+              >
+                <FaTools />
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  this.setState({
+                    alertInfo: (
+                      <Typography>
+                        O botão de interrogação no canto inferior direito da
+                        tela calcula e mostra os melhores lugares para arriscar
+                        um palpite. Quanto mais próximo de 0, menos chance de
+                        ter uma bomba. Quanto mais próximo de 100, mais chance
+                        de ter uma bomba.
+                      </Typography>
+                    ),
+                  })
+                }
+                // style={{ position: 'absolute', padding: 4, right: 0 }}
+              >
+                <FaQuestionCircle />
+              </IconButton>
+            </Grid>
           </Grid>
           <Grid
             item
-            style={{ margin: 'auto', textAlign: 'center' }}
-            xs={12}
-            sm={4}
-          >
-            <IconButton
-              color="primary"
-              disabled={running}
-              onClick={() => this.setState({ dialog: 'setup' })}
-            >
-              <FaTools />
-            </IconButton>
-          </Grid>
-        </Grid>
-        <Grid
-          item
-          style={{ margin: '1rem', marginBottom: '6rem', overflowY: 'hidden' }}
-        >
-          <table
             style={{
-              borderCollapse: 'collapse',
-              margin: 'auto',
-              opacity: running ? 1 : 0.5,
-              whiteSpace: 'nowrap',
+              margin: '1.5rem 0.5rem 6rem',
+              // marginBottom: '6rem',
+              overflowY: 'hidden',
             }}
           >
-            <tbody>
-              {grid.map((row, idRow) => (
-                <tr key={idRow}>
-                  {row.map((cell, idCell) => (
-                    <td
-                      key={idCell}
-                      onClick={() => {
-                        this.recursiveOpener(idRow, idCell);
-                        this.setState({ grid });
-                      }}
-                      onContextMenu={(e) => {
-                        cell.flag = !cell.flag;
-                        this.setState({ grid });
-                        e.preventDefault();
-                      }}
-                      style={{
-                        backgroundColor: '#bdbdbd',
-                        boxShadow: cell.open
-                          ? 'inset 1px 1px 4px 1px #777'
-                          : 'inset -1px -1px 4px 1px #333',
-                        textAlign: 'center',
-                        width: '2rem',
-                        height: '2rem',
-                        display: 'inline-block',
-                      }}
-                    >
-                      {cell.open ? (
-                        cell.bomb ? (
-                          <FaBomb
+            <table
+              style={{
+                borderCollapse: 'collapse',
+                margin: 'auto',
+                opacity: running ? 1 : 0.5,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <tbody>
+                {grid.map((row, idRow) => (
+                  <tr key={idRow}>
+                    {row.map((cell, idCell) => (
+                      <td
+                        key={idCell}
+                        onClick={() => {
+                          this.recursiveOpener(idRow, idCell);
+                          this.setState({ grid });
+                        }}
+                        onContextMenu={(e) => {
+                          cell.flag = !cell.flag;
+                          this.setState({ grid });
+                          e.preventDefault();
+                        }}
+                        style={{
+                          backgroundColor: '#bdbdbd',
+                          boxShadow: cell.open
+                            ? 'inset 1px 1px 4px 1px #777'
+                            : 'inset -1px -1px 4px 1px #333',
+                          textAlign: 'center',
+                          width: '2rem',
+                          height: '2rem',
+                          display: 'inline-block',
+                        }}
+                      >
+                        {cell.open ? (
+                          cell.bomb ? (
+                            <FaBomb
+                              size={22}
+                              style={{ margin: '0.25rem 0 0 0' }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                color: colors[cell.number],
+                                fontSize: '1.41rem',
+                                marginTop: '0.125rem',
+                                userSelect: 'none',
+                              }}
+                            >
+                              <b>{cell.number || ''}</b>
+                            </div>
+                          )
+                        ) : cell.flag ? (
+                          <IoIosFlag
                             size={22}
-                            style={{ margin: '0.25rem 0 0 0' }}
+                            style={{
+                              color: 'red',
+                              margin: '0.25rem 0 0 0',
+                            }}
                           />
-                        ) : (
+                        ) : this.totalGuesses ? (
                           <div
                             style={{
-                              color: colors[cell.number],
-                              fontSize: '1.41rem',
-                              marginTop: '0.125rem',
+                              color: '#777',
+                              // backgroundColor: `rgba(0,0,0,${cell.guessBomb /
+                              //   this.totalGuesses})`,
+                              marginTop: '0.375rem',
                             }}
                           >
-                            <b>{cell.number || ''}</b>
+                            {Math.round(
+                              (100 * cell.guessBomb) / this.totalGuesses,
+                            )}
                           </div>
-                        )
-                      ) : cell.flag ? (
-                        <IoIosFlag
-                          size={22}
-                          style={{
-                            color: 'red',
-                            margin: '0.25rem 0 0 0',
-                          }}
-                        />
-                      ) : this.totalGuesses ? (
-                        <div
-                          style={{
-                            color: '#777',
-                            marginTop: '0.375rem',
-                          }}
-                        >
-                          {Math.round(
-                            (100 * cell.guessBomb) / this.totalGuesses,
-                          )}
-                        </div>
-                      ) : null}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Grid>
-        <Fab
-          color="secondary"
-          style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
-          disabled={!running || loading}
-          onClick={() => {
-            this.setState({ loading: true });
-            setTimeout(this.calculate, 125);
-          }}
-        >
-          <IoMdHelp size={32} />
-        </Fab>
-        {loading && (
-          <CircularProgress
-            size={68}
-            style={{
-              position: 'fixed',
-              right: 26,
-              bottom: 26,
-              zIndex: 1,
+                        ) : null}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Grid>
+          <Fab
+            color="secondary"
+            style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
+            disabled={!running || thinking}
+            onClick={() => {
+              this.setState({ thinking: true });
+              setTimeout(this.calculate, 125);
             }}
-          />
-        )}
-      </Container>
+          >
+            <IoMdHelp size={32} />
+          </Fab>
+          {thinking && (
+            <CircularProgress
+              size={68}
+              style={{
+                position: 'fixed',
+                right: 26,
+                bottom: 26,
+                zIndex: 1,
+              }}
+            />
+          )}
+        </Container>
+      </div>
     );
   }
 }

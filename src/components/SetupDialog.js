@@ -2,8 +2,6 @@ import React, { Component } from 'react';
 import {
   Button,
   DialogActions,
-  // TextField,
-  // DialogContentText,
   DialogContent,
   DialogTitle,
   Dialog,
@@ -30,7 +28,6 @@ export class SetupDialog extends Component {
       <Dialog
         open={true}
         onClose={this.handleClose}
-        // aria-labelledby="form-dialog-title"
       >
         <DialogTitle id="form-dialog-title">Configurações</DialogTitle>
         <DialogContent>

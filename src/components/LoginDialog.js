@@ -1,47 +1,219 @@
 import React, { Component } from 'react';
+import Alert from './Alert';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   TextField,
   DialogActions,
   Button,
+  // CircularProgress,
 } from '@material-ui/core';
+import Actions from '../Actions';
+import DialPad from './DialPad';
+import Progress from './Progress';
+import _ from 'lodash';
 
 export class LoginDialog extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      alert: null,
+      checkPIN: false,
+      createPIN: false,
+      loading: false,
+      player: '',
+      creating: false,
+      pin: [],
+      nextPIN: 0,
+    };
+  }
+
+  addPlayer = () => {
+    const { player } = this.state;
+    if (player) {
+      Actions.getPlayer({ name: _.kebabCase(player) })
+        .then(() =>
+          this.setState({
+            alert: 'Já existe um usuario com este nome!',
+            loading: false,
+          }),
+        )
+        .catch(({ response }) =>
+          response.status === 404
+            ? this.setState({ createPIN: true, loading: false })
+            : this.setState({ alert: response.data, loading: false }),
+        );
+      this.setState({ loading: true });
+    } else {
+      this.setState({ alert: 'Insira um nome!' });
+    }
+    this.setState({ creating: true });
+  };
+
+  openDialPad = () => {
+    this.setState({ dialpad: true });
+  };
+
+  changePlayer = ({ target }) => {
+    this.setState({ player: target.value });
+  };
+
+  getPlayer = () => {
+    const { player } = this.state;
+    if (player) {
+      Actions.getPlayer({ name: _.kebabCase(player) })
+        .then(({ data }) => {
+          this.setState({
+            PIN: data.pin.split('').map((item) => parseInt(item, 10)),
+            loading: false,
+            checkPIN: true,
+            _id: data._id,
+          });
+        })
+        .catch(({ response }) =>
+          this.setState({
+            alert: response
+              ? response.data
+              : 'Estamos com problemas no servidor',
+            loading: false,
+          }),
+        );
+      this.setState({ loading: true });
+    } else {
+      this.setState({ alert: 'Insira um nome!' });
+    }
+  };
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.onKeyDown, false);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.onKeyDown, false);
+  }
+
+  onKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      this.getPlayer();
+    }
+  };
+
+  closeAlert = () => {
+    this.setState({ alert: null, alertSuccess: null });
+  };
+
+  checkPIN = (value) => {
+    const { _id, creating, player, PIN } = this.state;
+    if (creating) {
+      if (value.every((item, index) => item === PIN[index])) {
+        Actions.addPlayer({
+          name: player,
+          pin: PIN.join(''),
+        })
+          .then(() =>
+            this.setState({
+              loading: false,
+              alertSuccess: 'Jogador criado! Entre para jogar.',
+              checkPIN: false,
+            }),
+          )
+          .catch(({ response }) =>
+            this.setState({
+              loading: false,
+              alert: response
+                ? response.data
+                : 'Estamos com problemas no servidor.',
+              checkPIN: false,
+            }),
+          );
+        this.setState({ loading: true });
+      } else {
+        this.setState({ alert: 'As chaves não coincidem!', checkPIN: false });
+      }
+    } else {
+      if (value.every((item, index) => item === PIN[index])) {
+        this.props.onStart(_id);
+      } else {
+        this.setState({ alert: 'Chave inválida!', checkPIN: false });
+      }
+    }
+  };
+
   render() {
+    const {
+      alert,
+      alertSuccess,
+      checkPIN,
+      createPIN,
+      creating,
+      loading,
+      player,
+    } = this.state;
     const { handleClose } = this.props;
     return (
-      <Dialog
-        open={true}
-        onClose={handleClose}
-        // aria-labelledby="form-dialog-title"
-      >
-        <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            To subscribe to this website, please enter your email address here.
-            We will send updates occasionally.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="name"
-            label="Email Address"
-            type="email"
-            fullWidth
+      <div>
+        {loading && <Progress />}
+        {alert && (
+          <Alert onClose={this.closeAlert} severity="error">
+            {alert}
+          </Alert>
+        )}
+        {alertSuccess && (
+          <Alert onClose={this.closeAlert} severity="success">
+            {alertSuccess}
+          </Alert>
+        )}
+        {createPIN && (
+          <DialPad
+            onClose={() => this.setState({ createPIN: false })}
+            title="Crie uma chave"
+            content="4 dígitos"
+            onFinish={(PIN) =>
+              this.setState({ PIN, createPIN: false, checkPIN: true })
+            }
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleClose} color="primary">
-            Subscribe
-          </Button>
-        </DialogActions>
-      </Dialog>
+        )}
+        {checkPIN && (
+          <DialPad
+            onClose={() => this.setState({ checkPIN: false })}
+            title={creating ? 'Confirme a chave' : 'Insira sua chave'}
+            onFinish={this.checkPIN}
+          />
+        )}
+        <Dialog open onClose={handleClose}>
+          <DialogTitle id="form-dialog-title">Identificação</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Jogador"
+              fullWidth
+              onChange={this.changePlayer}
+              value={player}
+              variant="outlined"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={this.addPlayer} color="primary" variant="outlined">
+              Cadastrar
+            </Button>
+            <Button
+              onClick={() => {
+                this.setState({ creating: false });
+                this.getPlayer();
+              }}
+              color="primary"
+              ref={(ref) => {
+                this.confirm = ref;
+              }}
+              variant="contained"
+            >
+              Entrar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
     );
   }
 }
