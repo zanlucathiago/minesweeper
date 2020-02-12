@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { local_baseURL } from './config.json';
+import { remote_baseURL } from './config.json';
 import LocalStorage from './LocalStorage';
 
 const config = {
-  baseURL: `${local_baseURL}api/`,
-  // baseURL: `${remote_baseURL}api/`,
+  // baseURL: `${local_baseURL}api/`,
+  baseURL: `${remote_baseURL}api/`,
   headers: {
     'Content-Type': 'application/json',
   },
