@@ -1,35 +1,26 @@
 import {
-  FaBomb,
-  FaPlay,
-  FaTools,
-  FaStop,
-  FaListOl,
-  FaQuestionCircle,
-} from 'react-icons/fa';
-import { IoIosFlag, IoMdHelp } from 'react-icons/io';
+  Button,
+  CircularProgress,
+  Container,
+  Fab,
+  Grid,
+} from '@material-ui/core';
+import moment from 'moment';
 import React from 'react';
+import { FaBomb, FaPlay, FaStop } from 'react-icons/fa';
+import { IoIosFlag, IoMdHelp } from 'react-icons/io';
+import Actions from './Actions';
 import './App.css';
 import Board from './Board.json';
-import {
-  Container,
-  Grid,
-  Button,
-  IconButton,
-  Fab,
-  CircularProgress,
-  Typography,
-  Toolbar,
-  AppBar,
-} from '@material-ui/core';
-import LocalStorage from './LocalStorage';
-import Stopwatch from './components/Stopwatch';
-import FeedbackDialog from './components/FeedbackDialog';
-import SetupDialog from './components/SetupDialog';
-import moment from 'moment';
-import LoginDialog from './components/LoginDialog';
-import Actions from './Actions';
-import Progress from './components/Progress';
 import Alert from './components/Alert';
+import FeedbackDialog from './components/FeedbackDialog';
+import FormDialog from './components/FormDialog';
+import LoginDialog from './components/LoginDialog';
+import Progress from './components/Progress';
+import SetupDialog from './components/SetupDialog';
+import Stopwatch from './components/Stopwatch';
+import Toolbar from './components/Toolbar';
+import LocalStorage from './LocalStorage';
 
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
@@ -49,6 +40,8 @@ export default class App extends React.Component {
       size,
     };
   }
+
+  totalGuesses = 0;
 
   generateGrid = () => {
     const grid = Array(this.rows)
@@ -152,8 +145,6 @@ export default class App extends React.Component {
     this.setState({ grid: this.generateGrid(), size });
   };
 
-  totalGuesses = 0;
-
   calculate = () => {
     this.iterations = 0;
     const { grid } = this.state;
@@ -195,8 +186,8 @@ export default class App extends React.Component {
   };
 
   product_Range(a, b) {
-    let prd = a,
-      i = a;
+    let prd = a;
+    let i = a;
 
     while (i++ < b) {
       prd *= i;
@@ -207,10 +198,9 @@ export default class App extends React.Component {
   combinations(n, r) {
     if (n === r) {
       return 1;
-    } else {
-      r = r < n - r ? n - r : r;
-      return this.product_Range(r + 1, n) / this.product_Range(1, n - r);
     }
+    r = r < n - r ? n - r : r;
+    return this.product_Range(r + 1, n) / this.product_Range(1, n - r);
   }
 
   checkValuesForNextCell = (currBombs, currRow, currCol, currGrid) => {
@@ -280,9 +270,8 @@ export default class App extends React.Component {
           ) >= grid[x][y].number
         ) {
           return 0;
-        } else {
-          return 1;
         }
+        return 1;
       }
       return 0;
     });
@@ -292,6 +281,12 @@ export default class App extends React.Component {
     this.setState({ dialog: null });
   };
 
+  openFeedback = () => this.setState({ dialog: 'feedback', victory: false });
+
+  openSettings = () => this.setState({ dialog: 'setup' });
+
+  openForm = () => this.setState({ dialog: 'form' });
+
   render() {
     const {
       alert,
@@ -300,6 +295,7 @@ export default class App extends React.Component {
       dialog,
       grid,
       loading,
+      name,
       player,
       thinking,
       performance,
@@ -309,22 +305,23 @@ export default class App extends React.Component {
     } = this.state;
     return (
       <div>
-        {/* <AppBar position="static"> */}
-        {/* <Toolbar> */}
-        {/* <IconButton
-              edge="start"
-              className={classes.menuButton}
-              color="inherit"
-              aria-label="menu"
-            >
-              <MenuIcon />
-            </IconButton> */}
-        {/* {dialog !== 'login' && ( */}
-        {/* <Typography variant="h6">{`Jogador(a): ${player.name}`}</Typography> */}
-        {/* )} */}
-        {/* <Button color="inherit">Login</Button> */}
-        {/* </Toolbar> */}
-        {/* </AppBar> */}
+        {dialog === 'form' && (
+          <FormDialog
+            handleClose={(alertSuccess) => {
+              if (alertSuccess) {
+                this.setState({ alertSuccess });
+              }
+              this.closeDialogs();
+            }}
+          />
+        )}
+        <Toolbar
+          name={name}
+          _id={player}
+          openFeedback={this.openFeedback}
+          openForm={this.openForm}
+          openSettings={this.openSettings}
+        />
         <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
           {alert && (
             <Alert
@@ -355,8 +352,8 @@ export default class App extends React.Component {
           {loading && <Progress />}
           {dialog === 'login' && (
             <LoginDialog
-              onStart={(player) => {
-                this.setState({ alertSuccess: 'Bom jogo!', player });
+              onStart={(player, name) => {
+                this.setState({ alertSuccess: 'Bom jogo!', player, name });
                 LocalStorage.setPlayer(player);
                 this.closeDialogs();
               }}
@@ -391,8 +388,8 @@ export default class App extends React.Component {
             <Grid
               item
               style={{ margin: 'auto', textAlign: 'center' }}
-              xs={12}
-              sm={4}
+              xs={6}
+              // sm={4}
             >
               <Stopwatch
                 saveRecord={(performance) => {
@@ -417,8 +414,8 @@ export default class App extends React.Component {
             <Grid
               item
               style={{ margin: 'auto', textAlign: 'center' }}
-              xs={12}
-              sm={4}
+              xs={6}
+              // sm={4}
             >
               <Button
                 onClick={() => {
@@ -430,7 +427,7 @@ export default class App extends React.Component {
                     victory: false,
                   }));
                 }}
-                size="large"
+                // size="large"
                 variant="contained"
                 color="primary"
                 endIcon={running ? <FaStop /> : <FaPlay />}
@@ -438,13 +435,13 @@ export default class App extends React.Component {
                 {running ? 'Parar' : 'Iniciar'}
               </Button>
             </Grid>
-            <Grid
+            {/* <Grid
               item
               style={{ margin: 'auto', textAlign: 'center' }}
               xs={12}
               sm={4}
-            >
-              <IconButton
+            > */}
+            {/* <IconButton
                 color="primary"
                 // disabled={running}
                 onClick={() =>
@@ -452,15 +449,15 @@ export default class App extends React.Component {
                 }
               >
                 <FaListOl />
-              </IconButton>
-              <IconButton
+              </IconButton> */}
+            {/* <IconButton
                 color="primary"
                 disabled={running}
                 onClick={() => this.setState({ dialog: 'setup' })}
               >
                 <FaTools />
-              </IconButton>
-              <IconButton
+              </IconButton> */}
+            {/* <IconButton
                 onClick={() =>
                   this.setState({
                     alertInfo: (
@@ -478,7 +475,7 @@ export default class App extends React.Component {
               >
                 <FaQuestionCircle />
               </IconButton>
-            </Grid>
+            </Grid> */}
           </Grid>
           <Grid
             item

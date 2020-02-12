@@ -1,34 +1,36 @@
-import React, { Component } from 'react';
 import {
   Button,
+  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Dialog,
   FormControl,
-  FormLabel,
-  RadioGroup,
   FormControlLabel,
+  FormLabel,
   Radio,
+  RadioGroup,
 } from '@material-ui/core';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 
-export class SetupDialog extends Component {
+class SetupDialog extends Component {
   constructor(props) {
     super(props);
     this.state = {
       size: props.size,
     };
   }
+
   handleClose = () => {
-    this.props.handleClose();
+    const { handleClose } = this.props;
+    handleClose();
   };
+
   render() {
     const { size } = this.state;
+    const { setChanges } = this.props;
     return (
-      <Dialog
-        open={true}
-        onClose={this.handleClose}
-      >
+      <Dialog open onClose={this.handleClose}>
         <DialogTitle id="form-dialog-title">Configurações</DialogTitle>
         <DialogContent>
           <FormControl component="fieldset">
@@ -54,7 +56,7 @@ export class SetupDialog extends Component {
           <Button
             onClick={() => {
               this.handleClose();
-              this.props.setChanges(size);
+              setChanges(size);
             }}
             color="primary"
             variant="contained"
@@ -66,5 +68,11 @@ export class SetupDialog extends Component {
     );
   }
 }
+
+SetupDialog.propTypes = {
+  handleClose: PropTypes.func.isRequired,
+  setChanges: PropTypes.func.isRequired,
+  size: PropTypes.string.isRequired,
+};
 
 export default SetupDialog;

@@ -1,25 +1,23 @@
 import axios from 'axios';
-import { local_baseURL, remote_baseURL } from './config.json';
-import LocalStorage from './LocalStorage.js';
+import { local_baseURL } from './config.json';
+import LocalStorage from './LocalStorage';
 
 const config = {
-  baseURL: `${remote_baseURL}api/`,
+  baseURL: `${local_baseURL}api/`,
+  // baseURL: `${remote_baseURL}api/`,
   headers: {
     'Content-Type': 'application/json',
   },
 };
 
 class Actions {
+  sendMail = async (data) => axios.post('/mail/send', data, config);
+
   getPlayer = async (player) =>
-    await axios.get(
-      `/player/${player.name}${player.pin ? `?pin=${player.pin}` : ''}`,
-      config,
-    );
-  // addPlayer = async (player) => await axios.post(`/player/${player}`, config);
+    axios.get(`/player?${new URLSearchParams(player).toString()}`, config);
 
   getRecords = async (filter) =>
-    await axios.get(
-      // `/record?${new URLSearchParams(filter).toString()}`,
+    axios.get(
       `/record?${[
         ...filter.map((item) => `${item}=true`),
         `_id=${LocalStorage.getPlayer()}`,
@@ -28,9 +26,9 @@ class Actions {
       config,
     );
 
-  addRecord = async (data) => await axios.post('/record', data, config);
+  addRecord = async (data) => axios.post('/record', data, config);
 
-  addPlayer = async (player) => await axios.post('/player', player, config);
+  addPlayer = async (player) => axios.post('/player', player, config);
 }
 
 export default new Actions();

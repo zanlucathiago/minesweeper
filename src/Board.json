@@ -1,14 +1,17 @@
 {
   "sm": {
     "bombs": 10,
-    "dimensions": [8, 8]
+    "dimensions": [8, 8],
+    "name": "Fácil"
   },
   "md": {
     "bombs": 40,
-    "dimensions": [16, 16]
+    "dimensions": [16, 16],
+    "name": "Médio"
   },
   "lg": {
     "bombs": 99,
-    "dimensions": [16, 30]
+    "dimensions": [16, 30],
+    "name": "Difícil"
   }
 }

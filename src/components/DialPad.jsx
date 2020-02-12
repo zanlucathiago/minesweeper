@@ -1,14 +1,15 @@
-import React, { Component } from 'react';
 import {
   Button,
   ButtonGroup,
-  DialogContent,
-  DialogTitle,
   Dialog,
+  DialogContent,
   DialogContentText,
+  DialogTitle,
 } from '@material-ui/core';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 
-export class DialPad extends Component {
+class DialPad extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -26,7 +27,6 @@ export class DialPad extends Component {
   }
 
   onKeyDown = (e) => {
-    // debugger;
     switch (e.key) {
       case '1':
         this.handleNext(1);
@@ -73,6 +73,7 @@ export class DialPad extends Component {
       this.setState({ step: step - 1, value });
     }
   };
+
   render() {
     const { content, onClose, title } = this.props;
     return (
@@ -113,5 +114,17 @@ export class DialPad extends Component {
     );
   }
 }
+
+DialPad.defaultProps = {
+  content: '',
+  title: '',
+};
+
+DialPad.propTypes = {
+  content: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onFinish: PropTypes.func.isRequired,
+  title: PropTypes.string,
+};
 
 export default DialPad;

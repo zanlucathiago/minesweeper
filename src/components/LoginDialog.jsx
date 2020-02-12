@@ -1,20 +1,20 @@
-import React, { Component } from 'react';
-import Alert from './Alert';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  DialogActions,
   Button,
-  // CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from '@material-ui/core';
+import _ from 'lodash';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 import Actions from '../Actions';
+import Alert from './Alert';
 import DialPad from './DialPad';
 import Progress from './Progress';
-import _ from 'lodash';
 
-export class LoginDialog extends Component {
+class LoginDialog extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -24,15 +24,21 @@ export class LoginDialog extends Component {
       loading: false,
       player: '',
       creating: false,
-      pin: [],
-      nextPIN: 0,
     };
+  }
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.onKeyDown, false);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.onKeyDown, false);
   }
 
   addPlayer = () => {
     const { player } = this.state;
     if (player) {
-      Actions.getPlayer({ name: _.kebabCase(player) })
+      Actions.getPlayer({ slug: _.kebabCase(player) })
         .then(() =>
           this.setState({
             alert: 'Já existe um usuario com este nome!',
@@ -51,10 +57,6 @@ export class LoginDialog extends Component {
     this.setState({ creating: true });
   };
 
-  openDialPad = () => {
-    this.setState({ dialpad: true });
-  };
-
   changePlayer = ({ target }) => {
     this.setState({ player: target.value });
   };
@@ -62,9 +64,10 @@ export class LoginDialog extends Component {
   getPlayer = () => {
     const { player } = this.state;
     if (player) {
-      Actions.getPlayer({ name: _.kebabCase(player) })
+      Actions.getPlayer({ slug: _.kebabCase(player) })
         .then(({ data }) => {
           this.setState({
+            name: data.name,
             PIN: data.pin.split('').map((item) => parseInt(item, 10)),
             loading: false,
             checkPIN: true,
@@ -85,14 +88,6 @@ export class LoginDialog extends Component {
     }
   };
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeyDown, false);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeyDown, false);
-  }
-
   onKeyDown = (e) => {
     if (e.key === 'Enter') {
       this.getPlayer();
@@ -104,7 +99,7 @@ export class LoginDialog extends Component {
   };
 
   checkPIN = (value) => {
-    const { _id, creating, player, PIN } = this.state;
+    const { _id, creating, name, player, PIN } = this.state;
     if (creating) {
       if (value.every((item, index) => item === PIN[index])) {
         Actions.addPlayer({
@@ -131,12 +126,11 @@ export class LoginDialog extends Component {
       } else {
         this.setState({ alert: 'As chaves não coincidem!', checkPIN: false });
       }
+    } else if (value.every((item, index) => item === PIN[index])) {
+      const { onStart } = this.props;
+      onStart(_id, name);
     } else {
-      if (value.every((item, index) => item === PIN[index])) {
-        this.props.onStart(_id);
-      } else {
-        this.setState({ alert: 'Chave inválida!', checkPIN: false });
-      }
+      this.setState({ alert: 'Chave inválida!', checkPIN: false });
     }
   };
 
@@ -190,6 +184,7 @@ export class LoginDialog extends Component {
               label="Jogador"
               fullWidth
               onChange={this.changePlayer}
+              size="small"
               value={player}
               variant="outlined"
             />
@@ -217,5 +212,10 @@ export class LoginDialog extends Component {
     );
   }
 }
+
+LoginDialog.propTypes = {
+  onStart: PropTypes.func.isRequired,
+  handleClose: PropTypes.func.isRequired,
+};
 
 export default LoginDialog;

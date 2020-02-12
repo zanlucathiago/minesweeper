@@ -1,26 +1,20 @@
-import React, { Component } from 'react';
 import { TextField } from '@material-ui/core';
 import moment from 'moment';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 
-export class Stopwatch extends Component {
-  startWatch() {
-    this.startTime = performance.now();
-    this.runClock = setInterval(this.displayTime, 1000);
-    this.setState({ running: true });
-  }
-
+class Stopwatch extends Component {
   componentWillReceiveProps(nextProps) {
-    if (nextProps.running && !this.state.running) {
+    const { running } = this.state;
+    if (nextProps.running && !running) {
       this.startWatch();
-    } else if (this.state.running && !nextProps.running) {
+    } else if (running && !nextProps.running) {
       this.stopWatch();
     }
   }
 
-  // componentDidMount() {
-  // this.startWatch();
-  // this.displayTime();
-  // }
+  counter = 0;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -28,9 +22,9 @@ export class Stopwatch extends Component {
       time: this.formatTime(0),
     };
   }
-  counter = 0;
+
   displayTime = () => {
-    this.counter++;
+    this.counter = this.counter + 1;
     this.setState({
       time: this.formatTime(this.counter),
     });
@@ -43,26 +37,40 @@ export class Stopwatch extends Component {
       .second(seconds)
       .format('HH : mm : ss');
 
+  startWatch() {
+    this.startTime = performance.now();
+    this.runClock = setInterval(this.displayTime, 1000);
+    this.setState({ running: true });
+  }
+
   stopWatch() {
+    const { saveRecord } = this.props;
     this.endTime = performance.now();
     this.counter = 0;
     clearInterval(this.runClock);
     this.setState({ running: false, time: this.formatTime(0) });
     // this.props.openFeedback(this.endTime - this.startTime);
-    this.props.saveRecord(this.endTime - this.startTime);
+    saveRecord(this.endTime - this.startTime);
   }
 
   render() {
+    const { time } = this.state;
     return (
       <TextField
         disabled
         label="Tempo"
+        size="small"
         style={{ width: 108 }}
-        value={this.state.time}
+        value={time}
         variant="outlined"
       />
     );
   }
 }
+
+Stopwatch.propTypes = {
+  running: PropTypes.bool.isRequired,
+  saveRecord: PropTypes.func.isRequired,
+};
 
 export default Stopwatch;

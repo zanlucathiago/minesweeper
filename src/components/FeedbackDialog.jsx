@@ -1,35 +1,36 @@
-import moment from 'moment';
-import Actions from '../Actions';
-import React, { Component } from 'react';
 import {
   Button,
-  DialogActions,
-  DialogTitle,
   Dialog,
+  DialogActions,
   DialogContent,
-  TableContainer,
-  TableHead,
-  Table,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper,
   DialogContentText,
+  DialogTitle,
+  Divider,
   Grid,
   IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
-  Divider,
 } from '@material-ui/core';
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
-import { FaGlobeAmericas, FaInfinity, FaQuestionCircle } from 'react-icons/fa';
-import LocalStorage from '../LocalStorage';
-import Progress from './Progress';
+import moment from 'moment';
 import 'moment/locale/pt-br';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+import { FaGlobeAmericas, FaInfinity, FaQuestionCircle } from 'react-icons/fa';
+import Actions from '../Actions';
+import LocalStorage from '../LocalStorage';
 import Alert from './Alert';
+import Progress from './Progress';
 
 moment.locale('pt-br');
 
-export class FeedbackDialog extends Component {
+class FeedbackDialog extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -37,6 +38,11 @@ export class FeedbackDialog extends Component {
       data: [],
       loading: true,
     };
+  }
+
+  componentDidMount() {
+    const { formats } = this.state;
+    this.fetchRecords(formats);
   }
 
   handleFormat = (e, newFormats) => {
@@ -57,19 +63,15 @@ export class FeedbackDialog extends Component {
   };
 
   handleClose = () => {
-    this.props.handleClose();
+    const { handleClose } = this.props;
+    handleClose();
   };
-
-  componentDidMount() {
-    const { formats } = this.state;
-    this.fetchRecords(formats);
-  }
 
   render() {
     const { alert, alertInfo, data, formats, loading } = this.state;
     const { content, title } = this.props;
     return (
-      <Dialog open={true} onClose={this.handleClose}>
+      <Dialog open onClose={this.handleClose}>
         {alert && (
           <Alert
             onClose={() => this.setState({ alert: null })}
@@ -206,5 +208,16 @@ export class FeedbackDialog extends Component {
     );
   }
 }
+
+FeedbackDialog.defaultProps = {
+  content: '',
+  title: '',
+};
+
+FeedbackDialog.propTypes = {
+  content: PropTypes.string,
+  handleClose: PropTypes.func.isRequired,
+  title: PropTypes.string,
+};
 
 export default FeedbackDialog;
