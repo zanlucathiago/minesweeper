@@ -9,7 +9,9 @@ const Progress = () => {
         open
         PaperProps={{ style: { backgroundColor: '#000' } }}
         style={{ opacity: 0.375 }}
-      />
+      >
+        {` `}
+      </Dialog>
       <CircularProgress
         style={{
           position: 'absolute',

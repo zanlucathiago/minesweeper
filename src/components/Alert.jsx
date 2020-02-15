@@ -19,7 +19,7 @@ const Alert = ({
   >
     <MaterialAlert
       elevation={6}
-      {...(icon === false ? { icon: false } : {})}
+      icon={icon === false ? false : undefined}
       onClose={onClose}
       severity={severity}
       variant="filled"
@@ -38,7 +38,7 @@ Alert.defaultProps = {
 
 Alert.propTypes = {
   autoHideDuration: PropTypes.number,
-  children: PropTypes.element,
+  children: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
   icon: PropTypes.element,
   onClose: PropTypes.func.isRequired,
   severity: PropTypes.string.isRequired,

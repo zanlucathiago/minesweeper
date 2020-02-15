@@ -4,15 +4,6 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 class Stopwatch extends Component {
-  componentWillReceiveProps(nextProps) {
-    const { running } = this.state;
-    if (nextProps.running && !running) {
-      this.startWatch();
-    } else if (running && !nextProps.running) {
-      this.stopWatch();
-    }
-  }
-
   counter = 0;
 
   constructor(props) {
@@ -21,6 +12,16 @@ class Stopwatch extends Component {
       running: false,
       time: this.formatTime(0),
     };
+  }
+
+  // eslint-disable-next-line
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    const { running } = this.state;
+    if (nextProps.running && !running) {
+      this.startWatch();
+    } else if (running && !nextProps.running) {
+      this.stopWatch();
+    }
   }
 
   displayTime = () => {

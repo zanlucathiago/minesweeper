@@ -120,18 +120,18 @@ class FeedbackDialog extends Component {
                     <Grid container>
                       <Grid
                         item
-                        xs="2"
+                        xs={2}
                         style={{ margin: 'auto', textAlign: 'center' }}
                       >
                         <FaGlobeAmericas />
                       </Grid>
-                      <Grid item xs="10">
+                      <Grid item xs={10}>
                         <Typography>
                           Escolher entre listar recordes pessoais ou de todos os
                           jogadores.
                         </Typography>
                       </Grid>
-                      <Grid item xs="12">
+                      <Grid item xs={12}>
                         <Divider
                           style={{ backgroundColor: '#FFF', margin: 8 }}
                           variant="middle"
@@ -139,12 +139,12 @@ class FeedbackDialog extends Component {
                       </Grid>
                       <Grid
                         item
-                        xs="2"
+                        xs={2}
                         style={{ margin: 'auto', textAlign: 'center' }}
                       >
                         <FaInfinity />
                       </Grid>
-                      <Grid item xs="10">
+                      <Grid item xs={10}>
                         <Typography>
                           Escolher entre listar recordes do último dia ou de
                           todos os dias.
@@ -171,7 +171,7 @@ class FeedbackDialog extends Component {
               </TableHead>
               <TableBody>
                 {data.map((row, index) => (
-                  <TableRow key={row.name}>
+                  <TableRow key={row._id}>
                     <TableCell align="right">{index + 1}</TableCell>
                     <TableCell component="th" scope="row">
                       {row.player && row.player.name}

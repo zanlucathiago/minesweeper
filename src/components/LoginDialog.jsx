@@ -71,6 +71,7 @@ class LoginDialog extends Component {
             PIN: data.pin.split('').map((item) => parseInt(item, 10)),
             loading: false,
             checkPIN: true,
+            // eslint-disable-next-line
             _id: data._id,
           });
         })

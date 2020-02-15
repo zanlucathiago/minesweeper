@@ -26,6 +26,7 @@ class Toolbar extends Component {
     super(props);
     const { name } = props;
     this.state = {
+      drawerOpen: false,
       name: name || '',
     };
   }
@@ -54,7 +55,12 @@ class Toolbar extends Component {
     const { openFeedback, openForm, openSettings } = this.props;
     return (
       <AppBar position="static">
-        <SwipeableDrawer open={drawerOpen} onClose={this.closeDrawer}>
+        <SwipeableDrawer
+          open={drawerOpen}
+          onClose={() => {}}
+          onOpen={() => {}}
+          nClose={this.closeDrawer}
+        >
           <div
             // className={classes.list}
             role="presentation"

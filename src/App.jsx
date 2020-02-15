@@ -5,6 +5,7 @@ import {
   Fab,
   Grid,
 } from '@material-ui/core';
+import _ from 'lodash';
 import moment from 'moment';
 import React from 'react';
 import { FaBomb, FaPlay, FaStop } from 'react-icons/fa';
@@ -21,11 +22,16 @@ import SetupDialog from './components/SetupDialog';
 import Stopwatch from './components/Stopwatch';
 import Toolbar from './components/Toolbar';
 import LocalStorage from './LocalStorage';
+import Cell from './components/Cell';
 
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
 export default class App extends React.Component {
   squaresOpened = 0;
+
+  totalGuesses = 0;
+
+  min = {};
 
   constructor(props) {
     super(props);
@@ -40,8 +46,6 @@ export default class App extends React.Component {
       size,
     };
   }
-
-  totalGuesses = 0;
 
   generateGrid = () => {
     const grid = Array(this.rows)
@@ -81,12 +85,12 @@ export default class App extends React.Component {
     for (
       let row = Math.max(0, i - 1);
       row <= Math.min(this.rows - 1, i + 1);
-      row++
+      row += 1
     ) {
       for (
         let column = Math.max(0, j - 1);
         column <= Math.min(this.columns - 1, j + 1);
-        column++
+        column += 1
       ) {
         if (row !== i || column !== j) {
           res += callback(row, column);
@@ -94,41 +98,6 @@ export default class App extends React.Component {
       }
     }
     return res;
-  };
-
-  recursiveOpener = (row, column) => {
-    const { grid, running } = this.state;
-    const currCell = grid[row][column];
-    if (!currCell.open && !currCell.flag && running) {
-      currCell.open = true;
-      if (currCell.bomb) {
-        this.squaresOpened = 0;
-        return this.setState({
-          running: false,
-          victory: false,
-        });
-      }
-
-      this.totalGuesses = 0;
-      this.squaresOpened++;
-      if (this.squaresOpened === this.rows * this.columns - this.bombs) {
-        this.squaresOpened = 0;
-        return this.setState({
-          running: false,
-          victory: true,
-        });
-      }
-      currCell.isWild = false;
-      if (!currCell.number) {
-        this.iterateAround(row, column, (curRow, curColumn) => {
-          this.recursiveOpener(curRow, curColumn);
-        });
-      } else {
-        this.iterateAround(row, column, (curRow, curColumn) => {
-          grid[curRow][curColumn].isWild = false;
-        });
-      }
-    }
   };
 
   updateDimensions = (size) => {
@@ -142,7 +111,7 @@ export default class App extends React.Component {
   setChanges = (size) => {
     this.updateDimensions(size);
     LocalStorage.setLevel(size);
-    this.setState({ grid: this.generateGrid(), size });
+    this.setState({ grid: this.generateGrid(), running: false, size });
   };
 
   calculate = () => {
@@ -159,13 +128,13 @@ export default class App extends React.Component {
             const currCell = grid[rowId][colId];
             currCell.guessBomb = 0;
             if (currCell.isWild) {
-              this.totalWild++;
+              this.totalWild += 1;
             }
             return -1;
           }),
       );
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.columns; j++) {
+    for (let i = 0; i < this.rows; i += 1) {
+      for (let j = 0; j < this.columns; j += 1) {
         const currCell = grid[i][j];
         if (currCell.open && currCell.number) {
           if (
@@ -181,27 +150,25 @@ export default class App extends React.Component {
         }
       }
     }
+
     this.checkValuesForNextCell(0, 0, 0, currGrid);
-    this.setState({ grid, thinking: false });
+
+    this.min = _.minBy(
+      _.filter(
+        grid.map((row) => _.minBy(_.filter(row, ['open', false]), 'guessBomb')),
+        (o) => o,
+      ),
+      'guessBomb',
+    );
+
+    this.setState({
+      alertInfo: `${Math.round(
+        (100 * this.min.guessBomb) / this.totalGuesses,
+      )}% de chance de ter mina na região destacada.`,
+      grid,
+      thinking: false,
+    });
   };
-
-  product_Range(a, b) {
-    let prd = a;
-    let i = a;
-
-    while (i++ < b) {
-      prd *= i;
-    }
-    return prd;
-  }
-
-  combinations(n, r) {
-    if (n === r) {
-      return 1;
-    }
-    r = r < n - r ? n - r : r;
-    return this.product_Range(r + 1, n) / this.product_Range(1, n - r);
-  }
 
   checkValuesForNextCell = (currBombs, currRow, currCol, currGrid) => {
     const { grid } = this.state;
@@ -210,7 +177,7 @@ export default class App extends React.Component {
 
     if (nextCol === this.columns) {
       nextCol = 0;
-      nextRow++;
+      nextRow += 1;
     }
 
     if (!currCol && currRow === this.rows) {
@@ -287,6 +254,105 @@ export default class App extends React.Component {
 
   openForm = () => this.setState({ dialog: 'form' });
 
+  productRange = (a, b) => {
+    let prd = a;
+    let i = a;
+
+    while (i < b) {
+      prd *= i;
+      i += 1;
+    }
+    return prd;
+  };
+
+  combinations = (n, r) => {
+    const diff = n - r;
+    if (!diff) {
+      return 1;
+    }
+    const major = Math.max(diff, r);
+    return this.productRange(major + 1, n) / this.productRange(1, n - major);
+  };
+
+  onClickPlay = () => {
+    const { grid } = this.state;
+    this.squaresOpened = 0;
+    this.totalGuesses = 0;
+    this.setState(({ running }) => ({
+      grid: running ? grid : this.generateGrid(),
+      running: !running,
+      victory: false,
+    }));
+  };
+
+  startGame = (player, name) => {
+    this.setState({ alertSuccess: 'Bom jogo!', player, name });
+    LocalStorage.setPlayer(player);
+    this.closeDialogs();
+  };
+
+  saveRecord = (performance) => {
+    const { player, victory } = this.state;
+    if (victory) {
+      Actions.addRecord({
+        player,
+        performance,
+        level: LocalStorage.getLevel(),
+      }).then(() => {
+        this.setState({ dialog: 'feedback', loading: false });
+      });
+      this.setState({ loading: true, performance });
+    } else {
+      this.setState({ alert: 'Jogo encerrado.' });
+    }
+  };
+
+  renderCell = ({ open, bomb, number, flag }) => {
+    if (open) {
+      if (bomb) {
+        return <FaBomb size={22} style={{ margin: '0.25rem 0 0 0' }} />;
+      }
+      return (
+        <div
+          style={{
+            color: colors[number],
+            fontSize: '1.41rem',
+            marginTop: '0.125rem',
+            userSelect: 'none',
+          }}
+        >
+          <b>{number || ''}</b>
+        </div>
+      );
+    }
+    if (flag) {
+      return (
+        <IoIosFlag
+          size={22}
+          style={{
+            color: 'red',
+            margin: '0.25rem 0 0 0',
+          }}
+        />
+      );
+    }
+    // if (this.totalGuesses) {
+    //   // if (this.min && this.min.guessBomb === guessBomb) {
+    //   return (
+    //     <div
+    //       style={{
+    //         // backgroundColor: '#5BB',
+    //         color: '#777',
+    //         marginTop: '0.375rem',
+    //       }}
+    //     >
+    //       {Math.round((100 * guessBomb) / this.totalGuesses)}
+    //     </div>
+    //   );
+    // }
+    return null;
+  };
+
   render() {
     const {
       alert,
@@ -307,9 +373,9 @@ export default class App extends React.Component {
       <div>
         {dialog === 'form' && (
           <FormDialog
-            handleClose={(alertSuccess) => {
-              if (alertSuccess) {
-                this.setState({ alertSuccess });
+            handleClose={(msg) => {
+              if (msg) {
+                this.setState({ alertSuccess: msg });
               }
               this.closeDialogs();
             }}
@@ -341,7 +407,7 @@ export default class App extends React.Component {
           )}
           {alertInfo && (
             <Alert
-              autoHideDuration={21000}
+              // autoHideDuration={21000}
               onClose={() => this.setState({ alertInfo: null })}
               severity="info"
               vertical="top"
@@ -350,15 +416,7 @@ export default class App extends React.Component {
             </Alert>
           )}
           {loading && <Progress />}
-          {dialog === 'login' && (
-            <LoginDialog
-              onStart={(player, name) => {
-                this.setState({ alertSuccess: 'Bom jogo!', player, name });
-                LocalStorage.setPlayer(player);
-                this.closeDialogs();
-              }}
-            />
-          )}
+          {dialog === 'login' && <LoginDialog onStart={this.startGame} />}
           {dialog === 'feedback' && (
             <FeedbackDialog
               handleClose={this.closeDialogs}
@@ -385,49 +443,12 @@ export default class App extends React.Component {
             />
           )}
           <Grid container spacing={3} style={{ justifyContent: 'center' }}>
-            <Grid
-              item
-              style={{ margin: 'auto', textAlign: 'center' }}
-              xs={6}
-              // sm={4}
-            >
-              <Stopwatch
-                saveRecord={(performance) => {
-                  const { victory } = this.state;
-                  // this.setState({ dialog: 'feedback', perf })
-                  if (victory) {
-                    Actions.addRecord({
-                      player,
-                      performance,
-                      level: LocalStorage.getLevel(),
-                    }).then(() => {
-                      this.setState({ dialog: 'feedback', loading: false });
-                    });
-                    this.setState({ loading: true, performance });
-                  } else {
-                    this.setState({ alert: 'Jogo encerrado.' });
-                  }
-                }}
-                running={running}
-              />
+            <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>
+              <Stopwatch saveRecord={this.saveRecord} running={running} />
             </Grid>
-            <Grid
-              item
-              style={{ margin: 'auto', textAlign: 'center' }}
-              xs={6}
-              // sm={4}
-            >
+            <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>
               <Button
-                onClick={() => {
-                  this.squaresOpened = 0;
-                  this.totalGuesses = 0;
-                  this.setState(({ running }) => ({
-                    grid: running ? grid : this.generateGrid(),
-                    running: !running,
-                    victory: false,
-                  }));
-                }}
-                // size="large"
+                onClick={this.onClickPlay}
                 variant="contained"
                 color="primary"
                 endIcon={running ? <FaStop /> : <FaPlay />}
@@ -435,57 +456,16 @@ export default class App extends React.Component {
                 {running ? 'Parar' : 'Iniciar'}
               </Button>
             </Grid>
-            {/* <Grid
-              item
-              style={{ margin: 'auto', textAlign: 'center' }}
-              xs={12}
-              sm={4}
-            > */}
-            {/* <IconButton
-                color="primary"
-                // disabled={running}
-                onClick={() =>
-                  this.setState({ dialog: 'feedback', victory: false })
-                }
-              >
-                <FaListOl />
-              </IconButton> */}
-            {/* <IconButton
-                color="primary"
-                disabled={running}
-                onClick={() => this.setState({ dialog: 'setup' })}
-              >
-                <FaTools />
-              </IconButton> */}
-            {/* <IconButton
-                onClick={() =>
-                  this.setState({
-                    alertInfo: (
-                      <Typography>
-                        O botão de interrogação no canto inferior direito da
-                        tela calcula e mostra os melhores lugares para arriscar
-                        um palpite. Quanto mais próximo de 0, menos chance de
-                        ter uma bomba. Quanto mais próximo de 100, mais chance
-                        de ter uma bomba.
-                      </Typography>
-                    ),
-                  })
-                }
-                // style={{ position: 'absolute', padding: 4, right: 0 }}
-              >
-                <FaQuestionCircle />
-              </IconButton>
-            </Grid> */}
           </Grid>
           <Grid
             item
             style={{
               margin: '1.5rem 0.5rem 6rem',
-              // marginBottom: '6rem',
               overflowY: 'hidden',
             }}
           >
             <table
+              role="grid"
               style={{
                 borderCollapse: 'collapse',
                 margin: 'auto',
@@ -495,71 +475,32 @@ export default class App extends React.Component {
             >
               <tbody>
                 {grid.map((row, idRow) => (
-                  <tr key={idRow}>
+                  <tr key={idRow.toString()}>
                     {row.map((cell, idCell) => (
-                      <td
-                        key={idCell}
-                        onClick={() => {
-                          this.recursiveOpener(idRow, idCell);
-                          this.setState({ grid });
+                      <Cell
+                        bombs={this.bombs}
+                        cell={cell}
+                        changeGrid={(value) => this.setState({ grid: value })}
+                        changeVictory={(value) => {
+                          this.squaresOpened = 0;
+                          this.setState({ running: false, victory: value });
                         }}
-                        onContextMenu={(e) => {
-                          cell.flag = !cell.flag;
-                          this.setState({ grid });
-                          e.preventDefault();
+                        columns={this.columns}
+                        grid={grid}
+                        guessBomb={this.min.guessBomb}
+                        idCell={idCell}
+                        idRow={idRow}
+                        iterateAround={this.iterateAround}
+                        key={idCell.toString()}
+                        rows={this.rows}
+                        running={running}
+                        squareOpen={() => {
+                          this.totalGuesses = 0;
+                          this.min = {};
+                          this.squaresOpened += 1;
                         }}
-                        style={{
-                          backgroundColor: '#bdbdbd',
-                          boxShadow: cell.open
-                            ? 'inset 1px 1px 4px 1px #777'
-                            : 'inset -1px -1px 4px 1px #333',
-                          textAlign: 'center',
-                          width: '2rem',
-                          height: '2rem',
-                          display: 'inline-block',
-                        }}
-                      >
-                        {cell.open ? (
-                          cell.bomb ? (
-                            <FaBomb
-                              size={22}
-                              style={{ margin: '0.25rem 0 0 0' }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                color: colors[cell.number],
-                                fontSize: '1.41rem',
-                                marginTop: '0.125rem',
-                                userSelect: 'none',
-                              }}
-                            >
-                              <b>{cell.number || ''}</b>
-                            </div>
-                          )
-                        ) : cell.flag ? (
-                          <IoIosFlag
-                            size={22}
-                            style={{
-                              color: 'red',
-                              margin: '0.25rem 0 0 0',
-                            }}
-                          />
-                        ) : this.totalGuesses ? (
-                          <div
-                            style={{
-                              color: '#777',
-                              // backgroundColor: `rgba(0,0,0,${cell.guessBomb /
-                              //   this.totalGuesses})`,
-                              marginTop: '0.375rem',
-                            }}
-                          >
-                            {Math.round(
-                              (100 * cell.guessBomb) / this.totalGuesses,
-                            )}
-                          </div>
-                        ) : null}
-                      </td>
+                        squaresOpened={this.squaresOpened}
+                      />
                     ))}
                   </tr>
                 ))}
