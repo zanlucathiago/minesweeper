@@ -177,7 +177,7 @@ class LoginDialog extends Component {
           />
         )}
         <Dialog open onClose={handleClose}>
-          <DialogTitle id="form-dialog-title">Identificação</DialogTitle>
+          <DialogTitle id="form-dialog-title">Entrar</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus

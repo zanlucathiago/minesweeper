@@ -8,8 +8,8 @@ import {
 import _ from 'lodash';
 import moment from 'moment';
 import React from 'react';
-import { FaBomb, FaPlay, FaStop } from 'react-icons/fa';
-import { IoIosFlag, IoMdHelp } from 'react-icons/io';
+import { FaPlay, FaStop } from 'react-icons/fa';
+import { IoMdHelp } from 'react-icons/io';
 import Actions from './Actions';
 import './App.css';
 import Board from './Board.json';
@@ -23,8 +23,9 @@ import Stopwatch from './components/Stopwatch';
 import Toolbar from './components/Toolbar';
 import LocalStorage from './LocalStorage';
 import Cell from './components/Cell';
+import DocsDialog from './components/DocsDialog';
 
-const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
+// const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
 export default class App extends React.Component {
   squaresOpened = 0;
@@ -37,15 +38,61 @@ export default class App extends React.Component {
     super(props);
     const size = LocalStorage.getLevel();
     this.updateDimensions(size);
-    const player = LocalStorage.getPlayer();
+    // const player = LocalStorage.getPlayer();
+
+    // Actions.getPlayer({ slug: _.kebabCase(player) })
+    // .then(() =>
+    //   this.setState({
+    //     alert: 'Já existe um usuario com este nome!',
+    //     loading: false,
+    //   }),
+    // )
+    // .catch(({ response }) =>
+    //   response.status === 404
+    //     ? this.setState({ createPIN: true, loading: false })
+    //     : this.setState({ alert: response.data, loading: false }),
+    // );
+    this.setState({ loading: true });
+
     this.state = {
-      dialog: !player && 'login',
+      // dialog: 'login',
       grid: this.generateGrid(),
-      player,
+      loading: true,
+      // player,
       running: false,
       size,
     };
   }
+
+  componentDidMount() {
+    // eslint-disable-next-line
+    const _id = LocalStorage.getPlayer();
+    Actions.getPlayer({ _id })
+      .then(({ data }) =>
+        this.setState({
+          player: _id,
+          name: data.name,
+          dialog: null,
+          loading: false,
+        }),
+      )
+      .catch(this.askForAuth);
+
+    // this.askForAuth();
+  }
+
+  // validatePlayer = () => {
+
+  // };
+
+  askForAuth = () => {
+    this.setState({
+      name: null,
+      player: null,
+      dialog: 'login',
+      loading: false,
+    });
+  };
 
   generateGrid = () => {
     const grid = Array(this.rows)
@@ -155,16 +202,31 @@ export default class App extends React.Component {
 
     this.min = _.minBy(
       _.filter(
-        grid.map((row) => _.minBy(_.filter(row, ['open', false]), 'guessBomb')),
+        grid.map((row, rowId) =>
+          _.minBy(
+            _.filter(
+              row.map((o, colId) => {
+                if (!o.guessBomb) {
+                  grid[rowId][colId].noBomb = true;
+                }
+                return o;
+              }),
+              ['open', false],
+            ),
+            'guessBomb',
+          ),
+        ),
         (o) => o,
       ),
       'guessBomb',
     );
 
     this.setState({
-      alertInfo: `${Math.round(
-        (100 * this.min.guessBomb) / this.totalGuesses,
-      )}% de chance de ter mina na região destacada.`,
+      alertInfo: this.min.guessBomb
+        ? `${Math.round(
+            (100 * this.min.guessBomb) / this.totalGuesses,
+          )}% de chance de ter mina na região destacada em verde.`
+        : `A região destacada em azul não tem minas!`,
       grid,
       thinking: false,
     });
@@ -248,11 +310,17 @@ export default class App extends React.Component {
     this.setState({ dialog: null });
   };
 
-  openFeedback = () => this.setState({ dialog: 'feedback', victory: false });
+  openFeedback = () => {
+    this.setState({ dialog: 'feedback', victory: false });
+  };
 
-  openSettings = () => this.setState({ dialog: 'setup' });
+  openSettings = () => {
+    this.setState({ dialog: 'setup' });
+  };
 
-  openForm = () => this.setState({ dialog: 'form' });
+  openForm = () => {
+    this.setState({ dialog: 'form' });
+  };
 
   productRange = (a, b) => {
     let prd = a;
@@ -307,50 +375,59 @@ export default class App extends React.Component {
     }
   };
 
-  renderCell = ({ open, bomb, number, flag }) => {
-    if (open) {
-      if (bomb) {
-        return <FaBomb size={22} style={{ margin: '0.25rem 0 0 0' }} />;
-      }
-      return (
-        <div
-          style={{
-            color: colors[number],
-            fontSize: '1.41rem',
-            marginTop: '0.125rem',
-            userSelect: 'none',
-          }}
-        >
-          <b>{number || ''}</b>
-        </div>
-      );
+  openingPostScripts = (cell, idRow, idCell) => {
+    const { grid } = this.state;
+
+    grid[idRow][idCell].open = true;
+    grid[idRow][idCell].isWild = false;
+    if (cell.bomb) {
+      this.squaresOpened = 0;
+      this.totalGuesses = 0;
+      return this.setState({ running: false, victory: false });
+      // return loseGame(false);
     }
-    if (flag) {
-      return (
-        <IoIosFlag
-          size={22}
-          style={{
-            color: 'red',
-            margin: '0.25rem 0 0 0',
-          }}
-        />
-      );
+    // cell.isWild = false;
+
+    if (this.totalGuesses) {
+      this.setState({ grid });
     }
-    // if (this.totalGuesses) {
-    //   // if (this.min && this.min.guessBomb === guessBomb) {
-    //   return (
-    //     <div
-    //       style={{
-    //         // backgroundColor: '#5BB',
-    //         color: '#777',
-    //         marginTop: '0.375rem',
-    //       }}
-    //     >
-    //       {Math.round((100 * guessBomb) / this.totalGuesses)}
-    //     </div>
-    //   );
-    // }
+
+    // zerando contagens
+    this.totalGuesses = 0;
+    this.min = {};
+
+    this.squaresOpened += 1;
+
+    // se houve vitória
+    if (this.squaresOpened === this.rows * this.columns - this.bombs) {
+      this.squaresOpened = 0;
+      // this.totalGuesses = 0;
+      return this.setState({
+        running: false,
+        victory: true,
+      });
+    }
+
+    // Se o valor da célula é zero, iterar ao redor e abrir mais!
+    if (!cell.number) {
+      this.iterateAround(idRow, idCell, (curRow, curColumn) => {
+        // Apenas setar como open. Isso vai ativar os gatilhos no componentWillReceiveProps de cada celula
+        grid[curRow][curColumn].open = true;
+      });
+      // Chamar o render para ativar os gatilhos
+      this.setState({ grid });
+    } else {
+      this.iterateAround(idRow, idCell, (curRow, curColumn) => {
+        // Atualizando dados para solicitações de ajuda
+        grid[curRow][curColumn].isWild = false;
+      });
+    }
+
     return null;
+  };
+
+  openDocs = () => {
+    this.setState({ dialog: 'docs' });
   };
 
   render() {
@@ -369,6 +446,7 @@ export default class App extends React.Component {
       size,
       victory,
     } = this.state;
+    // const { grid } = this.state;
     return (
       <div>
         {dialog === 'form' && (
@@ -381,9 +459,12 @@ export default class App extends React.Component {
             }}
           />
         )}
+        {dialog === 'docs' && <DocsDialog handleClose={this.closeDialogs} />}
         <Toolbar
+          logout={this.askForAuth}
           name={name}
           _id={player}
+          openDocs={this.openDocs}
           openFeedback={this.openFeedback}
           openForm={this.openForm}
           openSettings={this.openSettings}
@@ -391,7 +472,9 @@ export default class App extends React.Component {
         <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
           {alert && (
             <Alert
-              onClose={() => this.setState({ alert: null })}
+              onClose={() => {
+                this.setState({ alert: null });
+              }}
               severity="error"
             >
               {alert}
@@ -399,7 +482,9 @@ export default class App extends React.Component {
           )}
           {alertSuccess && (
             <Alert
-              onClose={() => this.setState({ alertSuccess: null })}
+              onClose={() => {
+                this.setState({ alertSuccess: null });
+              }}
               severity="success"
             >
               {alertSuccess}
@@ -408,7 +493,9 @@ export default class App extends React.Component {
           {alertInfo && (
             <Alert
               // autoHideDuration={21000}
-              onClose={() => this.setState({ alertInfo: null })}
+              onClose={() => {
+                this.setState({ alertInfo: null });
+              }}
               severity="info"
               vertical="top"
             >
@@ -420,7 +507,7 @@ export default class App extends React.Component {
           {dialog === 'feedback' && (
             <FeedbackDialog
               handleClose={this.closeDialogs}
-              title={`${victory ? 'Você venceu!' : 'Tabela de recordes!'}`}
+              // title={`${victory ? 'Você venceu!' : 'Tabela de recordes!'}`}
               content={
                 victory &&
                 `Tempo: ${
@@ -478,28 +565,21 @@ export default class App extends React.Component {
                   <tr key={idRow.toString()}>
                     {row.map((cell, idCell) => (
                       <Cell
-                        bombs={this.bombs}
+                        // backgroundColor={this.setBackgroundColor(cell)}
                         cell={cell}
-                        changeGrid={(value) => this.setState({ grid: value })}
-                        changeVictory={(value) => {
-                          this.squaresOpened = 0;
-                          this.setState({ running: false, victory: value });
-                        }}
-                        columns={this.columns}
-                        grid={grid}
+                        // changeVictory={(value) => {
+
+                        // }}
                         guessBomb={this.min.guessBomb}
-                        idCell={idCell}
-                        idRow={idRow}
-                        iterateAround={this.iterateAround}
-                        key={idCell.toString()}
-                        rows={this.rows}
+                        openingPostScripts={() =>
+                          this.openingPostScripts(cell, idRow, idCell)
+                        }
+                        key={`${idCell.toString()}${running}`}
+                        // rows={this.rows}
                         running={running}
-                        squareOpen={() => {
-                          this.totalGuesses = 0;
-                          this.min = {};
-                          this.squaresOpened += 1;
-                        }}
-                        squaresOpened={this.squaresOpened}
+                        // squareOpen={() => {
+                        // }}
+                        // squaresOpened={this.squaresOpened}
                       />
                     ))}
                   </tr>

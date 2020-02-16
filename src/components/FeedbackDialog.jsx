@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Divider,
+  // Divider,
   Grid,
   IconButton,
   Paper,
@@ -22,7 +22,7 @@ import moment from 'moment';
 import 'moment/locale/pt-br';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { FaGlobeAmericas, FaInfinity, FaQuestionCircle } from 'react-icons/fa';
+import { FaGlobeAmericas, FaQuestionCircle } from 'react-icons/fa';
 import Actions from '../Actions';
 import LocalStorage from '../LocalStorage';
 import Alert from './Alert';
@@ -69,7 +69,7 @@ class FeedbackDialog extends Component {
 
   render() {
     const { alert, alertInfo, data, formats, loading } = this.state;
-    const { content, title } = this.props;
+    const { content } = this.props;
     return (
       <Dialog open onClose={this.handleClose}>
         {alert && (
@@ -91,13 +91,11 @@ class FeedbackDialog extends Component {
           </Alert>
         )}
         {loading && <Progress />}
-        <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
+        <DialogTitle>
+          Ranking {formats[0] !== 'player' ? 'Pessoal' : 'Global'}
+        </DialogTitle>
         <DialogContent>
-          {content && (
-            <DialogContentText id="alert-dialog-description">
-              {content}
-            </DialogContentText>
-          )}
+          {content && <DialogContentText>{content}</DialogContentText>}
           <Grid
             style={{
               marginBottom: 8,
@@ -109,29 +107,29 @@ class FeedbackDialog extends Component {
               <ToggleButton style={{ height: 32 }} value="player">
                 <FaGlobeAmericas />
               </ToggleButton>
-              <ToggleButton style={{ height: 32 }} value="date">
+              {/* <ToggleButton style={{ height: 32 }} value="date">
                 <FaInfinity />
-              </ToggleButton>
+              </ToggleButton> */}
             </ToggleButtonGroup>
             <IconButton
               onClick={() =>
                 this.setState({
                   alertInfo: (
                     <Grid container>
-                      <Grid
+                      {/* <Grid
                         item
                         xs={2}
                         style={{ margin: 'auto', textAlign: 'center' }}
                       >
                         <FaGlobeAmericas />
-                      </Grid>
-                      <Grid item xs={10}>
+                      </Grid> */}
+                      {/* <Grid item xs={10}> */}
+                      <Grid item>
                         <Typography>
-                          Escolher entre listar recordes pessoais ou de todos os
-                          jogadores.
+                          Ranking dinâmico com performances relevantes.
                         </Typography>
                       </Grid>
-                      <Grid item xs={12}>
+                      {/* <Grid item xs={12}>
                         <Divider
                           style={{ backgroundColor: '#FFF', margin: 8 }}
                           variant="middle"
@@ -149,7 +147,7 @@ class FeedbackDialog extends Component {
                           Escolher entre listar recordes do último dia ou de
                           todos os dias.
                         </Typography>
-                      </Grid>
+                      </Grid> */}
                     </Grid>
                   ),
                 })

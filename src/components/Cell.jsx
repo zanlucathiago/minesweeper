@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { FaBomb } from 'react-icons/fa';
 import { IoIosFlag } from 'react-icons/io';
@@ -5,45 +6,52 @@ import { IoIosFlag } from 'react-icons/io';
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
 class Cell extends Component {
-  recursiveOpener = (row, column) => {
-    const {
-      bombs,
-      changeVictory,
-      columns,
-      grid,
-      iterateAround,
-      rows,
-      running,
-      squareOpen,
-      squaresOpened,
-    } = this.props;
-    const currCell = grid[row][column];
-    if (!currCell.open && !currCell.flag && running) {
-      currCell.open = true;
-      if (currCell.bomb) {
-        return changeVictory(false);
+  constructor(props) {
+    super(props);
+    this.state = {
+      flag: false,
+      open: false,
+    };
+  }
+
+  // eslint-disable-next-line
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    if (!this.open && nextProps.cell.open) {
+      this.recursiveOpener();
+    }
+  }
+
+  setBackgroundColor = () => {
+    const { cell, guessBomb } = this.props;
+    // const { guessBomb, noBomb, open } = cell;
+
+    if (!cell.open) {
+      if (cell.noBomb) {
+        return '#5BB';
       }
-      squareOpen();
-      console.log(squaresOpened);
-      if (squaresOpened + 1 === rows * columns - bombs) {
-        return changeVictory(true);
+      if (guessBomb === cell.guessBomb) {
+        return '#BB5';
       }
-      currCell.isWild = false;
-      if (!currCell.number) {
-        iterateAround(row, column, (curRow, curColumn) => {
-          this.recursiveOpener(curRow, curColumn);
-        });
-      } else {
-        iterateAround(row, column, (curRow, curColumn) => {
-          grid[curRow][curColumn].isWild = false;
-        });
-      }
+    }
+    return '#BBB';
+  };
+
+  recursiveOpener = () => {
+    const { openingPostScripts, running } = this.props;
+    const { flag, open } = this.state;
+
+    if (!open && !flag && running) {
+      this.open = true;
+      this.setState({ open: true });
+      openingPostScripts();
     }
 
     return null;
   };
 
-  renderCell = ({ open, bomb, number, flag }) => {
+  renderCell = () => {
+    const { cell } = this.props;
+    const { open, bomb, number, flag } = cell;
     if (open) {
       if (bomb) {
         return <FaBomb size={22} style={{ margin: '0.25rem 0 0 0' }} />;
@@ -72,41 +80,26 @@ class Cell extends Component {
         />
       );
     }
-    // if (this.totalGuesses) {
-    //   // if (this.min && this.min.guessBomb === guessBomb) {
-    //   return (
-    //     <div
-    //       style={{
-    //         // backgroundColor: '#5BB',
-    //         color: '#777',
-    //         marginTop: '0.375rem',
-    //       }}
-    //     >
-    //       {Math.round((100 * guessBomb) / this.totalGuesses)}
-    //     </div>
-    //   );
-    // }
     return null;
   };
 
   render() {
-    const { cell, changeGrid, guessBomb, idRow, idCell, grid } = this.props;
+    const { cell } = this.props;
+    const { flag } = this.state;
     return (
       <td
-        key={cell}
+        // key={cell}
         onClick={() => {
-          this.recursiveOpener(idRow, idCell);
-          changeGrid(grid);
+          this.recursiveOpener();
         }}
         onContextMenu={(e) => {
-          grid[idRow][idCell].flag = !cell.flag;
-          changeGrid(grid);
+          cell.flag = !cell.flag;
+          this.setState({ flag: !flag });
           e.preventDefault();
         }}
         role="gridcell"
         style={{
-          backgroundColor:
-            guessBomb === cell.guessBomb && !cell.open ? '#5BB' : '#bdbdbd',
+          backgroundColor: this.setBackgroundColor(),
           boxShadow: cell.open
             ? 'inset 1px 1px 4px 1px #777'
             : 'inset -1px -1px 4px 1px #333',
@@ -116,10 +109,26 @@ class Cell extends Component {
           display: 'inline-block',
         }}
       >
-        {this.renderCell(cell)}
+        {this.renderCell()}
       </td>
     );
   }
 }
+
+Cell.propTypes = {
+  backgroundColor: PropTypes.string.isRequired,
+  cell: PropTypes.exact({
+    flag: PropTypes.bool,
+    guessBomb: PropTypes.number,
+    isWild: PropTypes.bool,
+    open: PropTypes.bool,
+    bomb: PropTypes.bool,
+    number: PropTypes.number,
+  }).isRequired,
+  // changeVictory: PropTypes.func.isRequired,
+  guessBomb: PropTypes.number.isRequired,
+  openingPostScripts: PropTypes.func.isRequired,
+  running: PropTypes.bool.isRequired,
+};
 
 export default Cell;
