@@ -56,37 +56,37 @@ class Cell extends Component {
 
       // const { grid } = this.state;
 
-      // cell.open = true;
+      cell.open = true;
+      cell.isWild = false;
+      if (cell.bomb) {
+        helper.setSquaresOpened(0);
+        helper.setTotalGuesses(0);
+        return loseGame();
+        // return loseGame(false);
+      }
       // cell.isWild = false;
-      // if (cell.bomb) {
-      //   helper.setSquaresOpened(0);
-      //   helper.setTotalGuesses(0);
-      //   return loseGame();
-      //   // return loseGame(false);
-      // }
-      // // cell.isWild = false;
 
-      // if (helper.getTotalGuesses()) {
-      //   refreshBoard();
-      // }
+      if (helper.getTotalGuesses()) {
+        refreshBoard();
+      }
 
-      // // zerando contagens
-      // helper.setTotalGuesses(0);
-      // helper.setMin({
-      //   guessBomb: null,
-      // });
+      // zerando contagens
+      helper.setTotalGuesses(0);
+      helper.setMin({
+        guessBomb: null,
+      });
 
-      // helper.incrementSquaresOpened();
+      helper.incrementSquaresOpened();
 
-      // // se houve vitória
-      // if (
-      //   helper.getSquaresOpened() ===
-      //   helper.getRows() * helper.getColumns() - helper.getBombs()
-      // ) {
-      //   helper.setSquaresOpened(0);
-      //   // this.totalGuesses = 0;
-      //   return winGame();
-      // }
+      // se houve vitória
+      if (
+        helper.getSquaresOpened() ===
+        helper.getRows() * helper.getColumns() - helper.getBombs()
+      ) {
+        helper.setSquaresOpened(0);
+        // this.totalGuesses = 0;
+        return winGame();
+      }
 
       // Se o valor da célula é zero, iterar ao redor e abrir mais!
       if (!cell.number) {
@@ -94,7 +94,7 @@ class Cell extends Component {
         // Chamar o render para ativar os gatilhos
         refreshBoard();
       } else {
-        // updateWilds();
+        updateWilds();
       }
 
       return null;
@@ -106,8 +106,8 @@ class Cell extends Component {
   renderCell = () => {
     const { cell } = this.props;
     const { bomb, number } = cell;
-    const { flag, open } = this.state;
-    if (open) {
+    const { flag } = this.state;
+    if (cell.open) {
       if (bomb) {
         return <FaBomb size={22} style={{ margin: '0.25rem 0 0 0' }} />;
       }
@@ -140,22 +140,22 @@ class Cell extends Component {
 
   render() {
     const { cell } = this.props;
-    const { flag, open } = this.state;
+    const { flag } = this.state;
     return (
       <td
         // key={cell}
         onClick={() => {
           this.recursiveOpener();
         }}
-        // onContextMenu={(e) => {
-        //   cell.flag = !cell.flag;
-        //   this.setState({ flag: !flag });
-        //   e.preventDefault();
-        // }}
+        onContextMenu={(e) => {
+          cell.flag = !cell.flag;
+          this.setState({ flag: !flag });
+          e.preventDefault();
+        }}
         role="gridcell"
         style={{
           backgroundColor: this.setBackgroundColor(),
-          boxShadow: open
+          boxShadow: cell.open
             ? 'inset 1px 1px 4px 1px #777'
             : 'inset -1px -1px 4px 1px #333',
           textAlign: 'center',
