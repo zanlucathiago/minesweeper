@@ -24,6 +24,7 @@ import Toolbar from './components/Toolbar';
 import LocalStorage from './LocalStorage';
 import Cell from './components/Cell';
 import DocsDialog from './components/DocsDialog';
+import helper from './helper';
 
 // const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
@@ -32,35 +33,29 @@ export default class App extends React.Component {
 
   totalGuesses = 0;
 
-  min = {};
+  min = {
+    guessBomb: null,
+  };
 
   constructor(props) {
     super(props);
     const size = LocalStorage.getLevel();
     this.updateDimensions(size);
-    // const player = LocalStorage.getPlayer();
-
-    // Actions.getPlayer({ slug: _.kebabCase(player) })
-    // .then(() =>
-    //   this.setState({
-    //     alert: 'Já existe um usuario com este nome!',
-    //     loading: false,
-    //   }),
-    // )
-    // .catch(({ response }) =>
-    //   response.status === 404
-    //     ? this.setState({ createPIN: true, loading: false })
-    //     : this.setState({ alert: response.data, loading: false }),
-    // );
-    this.setState({ loading: true });
 
     this.state = {
-      // dialog: 'login',
+      alert: '',
+      alertInfo: '',
+      alertSuccess: '',
+      dialog: null,
       grid: this.generateGrid(),
       loading: true,
-      // player,
+      name: '',
+      performance: null,
+      player: null,
       running: false,
       size,
+      thinking: false,
+      victory: false,
     };
   }
 
@@ -77,13 +72,7 @@ export default class App extends React.Component {
         }),
       )
       .catch(this.askForAuth);
-
-    // this.askForAuth();
   }
-
-  // validatePlayer = () => {
-
-  // };
 
   askForAuth = () => {
     this.setState({
@@ -95,10 +84,10 @@ export default class App extends React.Component {
   };
 
   generateGrid = () => {
-    const grid = Array(this.rows)
+    const grid = Array(helper.getRows())
       .fill()
       .map(() =>
-        Array(this.columns)
+        Array(helper.getColumns())
           .fill()
           .map(() => ({
             bomb: false,
@@ -109,15 +98,17 @@ export default class App extends React.Component {
             isWild: true,
           })),
       );
-    Array(this.bombs)
+    Array(helper.getBombs())
       .fill()
       .forEach(() => {
         let i;
         let j;
         do {
-          const index = Math.floor(Math.random() * this.rows * this.columns);
-          i = Math.floor(index / this.columns);
-          j = index % this.columns;
+          const index = Math.floor(
+            Math.random() * helper.getRows() * helper.getColumns(),
+          );
+          i = Math.floor(index / helper.getColumns());
+          j = index % helper.getColumns();
         } while (grid[i][j].bomb);
         this.iterateAround(i, j, (row, column) => {
           grid[row][column].number += 1;
@@ -131,12 +122,12 @@ export default class App extends React.Component {
     let res = 0;
     for (
       let row = Math.max(0, i - 1);
-      row <= Math.min(this.rows - 1, i + 1);
+      row <= Math.min(helper.getRows() - 1, i + 1);
       row += 1
     ) {
       for (
         let column = Math.max(0, j - 1);
-        column <= Math.min(this.columns - 1, j + 1);
+        column <= Math.min(helper.getColumns() - 1, j + 1);
         column += 1
       ) {
         if (row !== i || column !== j) {
@@ -150,9 +141,9 @@ export default class App extends React.Component {
   updateDimensions = (size) => {
     const { bombs, dimensions } = Board[size];
     const [rows, columns] = dimensions;
-    this.rows = rows;
-    this.columns = columns;
-    this.bombs = bombs;
+    helper.setRows(rows);
+    helper.setColumns(columns);
+    helper.setBombs(bombs);
   };
 
   setChanges = (size) => {
@@ -162,26 +153,26 @@ export default class App extends React.Component {
   };
 
   calculate = () => {
-    this.iterations = 0;
+    helper.setIterations(0);
     const { grid } = this.state;
-    this.totalGuesses = 0;
-    this.totalWild = 0;
-    const currGrid = Array(this.rows)
+    helper.setTotalGuesses(0);
+    helper.setTotalWild(0);
+    const currGrid = Array(helper.getRows())
       .fill()
       .map((row, rowId) =>
-        Array(this.columns)
+        Array(helper.getColumns())
           .fill()
           .map((cell, colId) => {
             const currCell = grid[rowId][colId];
             currCell.guessBomb = 0;
             if (currCell.isWild) {
-              this.totalWild += 1;
+              helper.incrementTotalWild();
             }
             return -1;
           }),
       );
-    for (let i = 0; i < this.rows; i += 1) {
-      for (let j = 0; j < this.columns; j += 1) {
+    for (let i = 0; i < helper.getRows(); i += 1) {
+      for (let j = 0; j < helper.getColumns(); j += 1) {
         const currCell = grid[i][j];
         if (currCell.open && currCell.number) {
           if (
@@ -200,31 +191,33 @@ export default class App extends React.Component {
 
     this.checkValuesForNextCell(0, 0, 0, currGrid);
 
-    this.min = _.minBy(
-      _.filter(
-        grid.map((row, rowId) =>
-          _.minBy(
-            _.filter(
-              row.map((o, colId) => {
-                if (!o.guessBomb) {
-                  grid[rowId][colId].noBomb = true;
-                }
-                return o;
-              }),
-              ['open', false],
+    helper.setMin(
+      _.minBy(
+        _.filter(
+          grid.map((row, rowId) =>
+            _.minBy(
+              _.filter(
+                row.map((o, colId) => {
+                  if (!o.guessBomb) {
+                    grid[rowId][colId].noBomb = true;
+                  }
+                  return o;
+                }),
+                ['open', false],
+              ),
+              'guessBomb',
             ),
-            'guessBomb',
           ),
+          (o) => o,
         ),
-        (o) => o,
+        'guessBomb',
       ),
-      'guessBomb',
     );
 
     this.setState({
-      alertInfo: this.min.guessBomb
+      alertInfo: helper.getMin().guessBomb
         ? `${Math.round(
-            (100 * this.min.guessBomb) / this.totalGuesses,
+            (100 * helper.getMin().guessBomb) / helper.getTotalGuesses(),
           )}% de chance de ter mina na região destacada em verde.`
         : `A região destacada em azul não tem minas!`,
       grid,
@@ -237,26 +230,29 @@ export default class App extends React.Component {
     let nextRow = currRow;
     let nextCol = currCol + 1;
 
-    if (nextCol === this.columns) {
+    if (nextCol === helper.getColumns()) {
       nextCol = 0;
       nextRow += 1;
     }
 
-    if (!currCol && currRow === this.rows) {
-      const wildBombs = this.bombs - currBombs;
-      if (wildBombs <= this.totalWild) {
-        const wildCombinations = this.combinations(this.totalWild, wildBombs);
+    if (!currCol && currRow === helper.getRows()) {
+      const wildBombs = helper.getBombs() - currBombs;
+      if (wildBombs <= helper.getTotalWild()) {
+        const wildCombinations = this.combinations(
+          helper.getTotalWild(),
+          wildBombs,
+        );
         currGrid.forEach((row, rowId) =>
           row.forEach((cell, colId) => {
             if (grid[rowId][colId].isWild) {
               grid[rowId][colId].guessBomb +=
-                (wildCombinations * wildBombs) / this.totalWild;
+                (wildCombinations * wildBombs) / helper.getTotalWild();
             } else {
               grid[rowId][colId].guessBomb += cell * wildCombinations;
             }
           }),
         );
-        this.totalGuesses += wildCombinations;
+        helper.incrementTotalGuesses(wildCombinations);
       }
     } else {
       let nextGrid = JSON.parse(JSON.stringify(currGrid));
@@ -268,7 +264,7 @@ export default class App extends React.Component {
         this.checkValuesForNextCell(currBombs, nextRow, nextCol, nextGrid);
       }
       const currCel = grid[currRow][currCol];
-      if (!currCel.open && currBombs < this.bombs && !currCel.isWild) {
+      if (!currCel.open && currBombs < helper.getBombs() && !currCel.isWild) {
         nextGrid = JSON.parse(JSON.stringify(currGrid));
         nextGrid[currRow][currCol] = 1;
         if (
@@ -344,8 +340,8 @@ export default class App extends React.Component {
 
   onClickPlay = () => {
     const { grid } = this.state;
-    this.squaresOpened = 0;
-    this.totalGuesses = 0;
+    helper.setSquaresOpened(0);
+    helper.setTotalGuesses(0);
     this.setState(({ running }) => ({
       grid: running ? grid : this.generateGrid(),
       running: !running,
@@ -375,56 +371,8 @@ export default class App extends React.Component {
     }
   };
 
-  openingPostScripts = (cell, idRow, idCell) => {
-    const { grid } = this.state;
-
-    grid[idRow][idCell].open = true;
-    grid[idRow][idCell].isWild = false;
-    if (cell.bomb) {
-      this.squaresOpened = 0;
-      this.totalGuesses = 0;
-      return this.setState({ running: false, victory: false });
-      // return loseGame(false);
-    }
-    // cell.isWild = false;
-
-    if (this.totalGuesses) {
-      this.setState({ grid });
-    }
-
-    // zerando contagens
-    this.totalGuesses = 0;
-    this.min = {};
-
-    this.squaresOpened += 1;
-
-    // se houve vitória
-    if (this.squaresOpened === this.rows * this.columns - this.bombs) {
-      this.squaresOpened = 0;
-      // this.totalGuesses = 0;
-      return this.setState({
-        running: false,
-        victory: true,
-      });
-    }
-
-    // Se o valor da célula é zero, iterar ao redor e abrir mais!
-    if (!cell.number) {
-      this.iterateAround(idRow, idCell, (curRow, curColumn) => {
-        // Apenas setar como open. Isso vai ativar os gatilhos no componentWillReceiveProps de cada celula
-        grid[curRow][curColumn].open = true;
-      });
-      // Chamar o render para ativar os gatilhos
-      this.setState({ grid });
-    } else {
-      this.iterateAround(idRow, idCell, (curRow, curColumn) => {
-        // Atualizando dados para solicitações de ajuda
-        grid[curRow][curColumn].isWild = false;
-      });
-    }
-
-    return null;
-  };
+  // openingPostScripts = (cell, idRow, idCell) => {
+  // };
 
   openDocs = () => {
     this.setState({ dialog: 'docs' });
@@ -570,13 +518,45 @@ export default class App extends React.Component {
                         // changeVictory={(value) => {
 
                         // }}
-                        guessBomb={this.min.guessBomb}
-                        openingPostScripts={() =>
-                          this.openingPostScripts(cell, idRow, idCell)
+                        // guessBomb={this.min.guessBomb}
+                        // openingPostScripts={() =>
+                        //   this.openingPostScripts(cell, idRow, idCell)
+                        // }
+                        key={`${idCell.toString()}${idRow.toString()}${running}`}
+                        loseGame={() =>
+                          this.setState({ running: false, victory: false })
                         }
-                        key={`${idCell.toString()}${running}`}
+                        openAround={() => {
+                          this.iterateAround(
+                            idRow,
+                            idCell,
+                            (curRow, curColumn) => {
+                              // Apenas setar como open. Isso vai ativar os gatilhos no componentWillReceiveProps de cada celula
+                              grid[curRow][curColumn].open = true;
+                            },
+                          );
+
+                          this.setState({ grid });
+                        }}
                         // rows={this.rows}
+                        refreshBoard={() => this.setState({ grid })}
                         running={running}
+                        updateWilds={() =>
+                          this.iterateAround(
+                            idRow,
+                            idCell,
+                            (curRow, curColumn) => {
+                              // Atualizando dados para solicitações de ajuda
+                              grid[curRow][curColumn].isWild = false;
+                            },
+                          )
+                        }
+                        winGame={() =>
+                          this.setState({
+                            running: false,
+                            victory: true,
+                          })
+                        }
                         // squareOpen={() => {
                         // }}
                         // squaresOpened={this.squaresOpened}
@@ -593,7 +573,7 @@ export default class App extends React.Component {
             disabled={!running || thinking}
             onClick={() => {
               this.setState({ thinking: true });
-              setTimeout(this.calculate, 125);
+              // setTimeout(this.calculate, 125);
             }}
           >
             <IoMdHelp size={32} />

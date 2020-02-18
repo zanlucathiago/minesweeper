@@ -40,7 +40,7 @@ class Stopwatch extends Component {
 
   startWatch() {
     this.startTime = performance.now();
-    this.runClock = setInterval(this.displayTime, 1000);
+    // this.runClock = setInterval(this.displayTime, 1000);
     this.setState({ running: true });
   }
 
