@@ -78,6 +78,26 @@ class BoardHelper {
   incrementSquaresOpened(squaresOpened = 1) {
     this.squaresOpened += squaresOpened;
   }
+
+  iterateAround = (i, j, callback) => {
+    let res = 0;
+    for (
+      let row = Math.max(0, i - 1);
+      row <= Math.min(this.getRows() - 1, i + 1);
+      row += 1
+    ) {
+      for (
+        let column = Math.max(0, j - 1);
+        column <= Math.min(this.getColumns() - 1, j + 1);
+        column += 1
+      ) {
+        if (row !== i || column !== j) {
+          res += callback(row, column);
+        }
+      }
+    }
+    return res;
+  };
 }
 
 export default new BoardHelper();

@@ -22,11 +22,9 @@ import SetupDialog from './components/SetupDialog';
 import Stopwatch from './components/Stopwatch';
 import Toolbar from './components/Toolbar';
 import LocalStorage from './LocalStorage';
-import Cell from './components/Cell';
 import DocsDialog from './components/DocsDialog';
 import helper from './helper';
-
-// const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
+import BoardGrid from './components/BoardGrid';
 
 export default class App extends React.Component {
   squaresOpened = 0;
@@ -48,6 +46,7 @@ export default class App extends React.Component {
       alertSuccess: '',
       dialog: null,
       grid: this.generateGrid(),
+      key: false,
       loading: true,
       name: '',
       performance: null,
@@ -110,32 +109,15 @@ export default class App extends React.Component {
           i = Math.floor(index / helper.getColumns());
           j = index % helper.getColumns();
         } while (grid[i][j].bomb);
-        this.iterateAround(i, j, (row, column) => {
+        helper.iterateAround(i, j, (row, column) => {
           grid[row][column].number += 1;
         });
         grid[i][j].bomb = true;
       });
+    helper.setMin({
+      guessBomb: null,
+    });
     return grid;
-  };
-
-  iterateAround = (i, j, callback) => {
-    let res = 0;
-    for (
-      let row = Math.max(0, i - 1);
-      row <= Math.min(helper.getRows() - 1, i + 1);
-      row += 1
-    ) {
-      for (
-        let column = Math.max(0, j - 1);
-        column <= Math.min(helper.getColumns() - 1, j + 1);
-        column += 1
-      ) {
-        if (row !== i || column !== j) {
-          res += callback(row, column);
-        }
-      }
-    }
-    return res;
   };
 
   updateDimensions = (size) => {
@@ -147,9 +129,16 @@ export default class App extends React.Component {
   };
 
   setChanges = (size) => {
+    const { key } = this.state;
     this.updateDimensions(size);
     LocalStorage.setLevel(size);
-    this.setState({ grid: this.generateGrid(), running: false, size });
+
+    this.setState({
+      grid: this.generateGrid(),
+      key: !key,
+      running: false,
+      size,
+    });
   };
 
   calculate = () => {
@@ -176,10 +165,10 @@ export default class App extends React.Component {
         const currCell = grid[i][j];
         if (currCell.open && currCell.number) {
           if (
-            this.iterateAround(i, j, (x, y) => (grid[x][y].open ? 0 : 1)) ===
+            helper.iterateAround(i, j, (x, y) => (grid[x][y].open ? 0 : 1)) ===
             currCell.number
           ) {
-            this.iterateAround(i, j, (x, y) => {
+            helper.iterateAround(i, j, (x, y) => {
               if (!grid[x][y].open) {
                 currGrid[x][y] = 1;
               }
@@ -284,13 +273,13 @@ export default class App extends React.Component {
 
   checkAround = (row, col, currGrid) => {
     const { grid } = this.state;
-    return this.iterateAround(row, col, (x, y) => {
+    return helper.iterateAround(row, col, (x, y) => {
       if (grid[x][y].open && grid[x][y].number) {
         if (
-          this.iterateAround(x, y, (a, b) =>
+          helper.iterateAround(x, y, (a, b) =>
             (!grid[a][b].open && currGrid[a][b] < 1) || grid[a][b].open ? 0 : 1,
           ) <= grid[x][y].number &&
-          this.iterateAround(x, y, (a, b) =>
+          helper.iterateAround(x, y, (a, b) =>
             (!grid[a][b].open && !currGrid[a][b]) || grid[a][b].open ? 0 : 1,
           ) >= grid[x][y].number
         ) {
@@ -339,11 +328,12 @@ export default class App extends React.Component {
   };
 
   onClickPlay = () => {
-    const { grid } = this.state;
+    const { grid, key } = this.state;
     helper.setSquaresOpened(0);
     helper.setTotalGuesses(0);
     this.setState(({ running }) => ({
       grid: running ? grid : this.generateGrid(),
+      key: running ? key : !key,
       running: !running,
       victory: false,
     }));
@@ -371,9 +361,6 @@ export default class App extends React.Component {
     }
   };
 
-  // openingPostScripts = (cell, idRow, idCell) => {
-  // };
-
   openDocs = () => {
     this.setState({ dialog: 'docs' });
   };
@@ -385,6 +372,7 @@ export default class App extends React.Component {
       alertSuccess,
       dialog,
       grid,
+      key,
       loading,
       name,
       player,
@@ -394,7 +382,7 @@ export default class App extends React.Component {
       size,
       victory,
     } = this.state;
-    // const { grid } = this.state;
+
     return (
       <div>
         {dialog === 'form' && (
@@ -440,7 +428,6 @@ export default class App extends React.Component {
           )}
           {alertInfo && (
             <Alert
-              // autoHideDuration={21000}
               onClose={() => {
                 this.setState({ alertInfo: null });
               }}
@@ -455,7 +442,6 @@ export default class App extends React.Component {
           {dialog === 'feedback' && (
             <FeedbackDialog
               handleClose={this.closeDialogs}
-              // title={`${victory ? 'Você venceu!' : 'Tabela de recordes!'}`}
               content={
                 victory &&
                 `Tempo: ${
@@ -508,63 +494,20 @@ export default class App extends React.Component {
                 whiteSpace: 'nowrap',
               }}
             >
-              <tbody>
-                {grid.map((row, idRow) => (
-                  <tr key={idRow.toString()}>
-                    {row.map((cell, idCell) => (
-                      <Cell
-                        // backgroundColor={this.setBackgroundColor(cell)}
-                        cell={cell}
-                        // changeVictory={(value) => {
-
-                        // }}
-                        // guessBomb={this.min.guessBomb}
-                        // openingPostScripts={() =>
-                        //   this.openingPostScripts(cell, idRow, idCell)
-                        // }
-                        key={`${idCell.toString()}${idRow.toString()}${running}`}
-                        loseGame={() =>
-                          this.setState({ running: false, victory: false })
-                        }
-                        openAround={() => {
-                          this.iterateAround(
-                            idRow,
-                            idCell,
-                            (curRow, curColumn) => {
-                              // Apenas setar como open. Isso vai ativar os gatilhos no componentWillReceiveProps de cada celula
-                              grid[curRow][curColumn].open = true;
-                            },
-                          );
-
-                          this.setState({ grid });
-                        }}
-                        // rows={this.rows}
-                        refreshBoard={() => this.setState({ grid })}
-                        running={running}
-                        updateWilds={() =>
-                          this.iterateAround(
-                            idRow,
-                            idCell,
-                            (curRow, curColumn) => {
-                              // Atualizando dados para solicitações de ajuda
-                              grid[curRow][curColumn].isWild = false;
-                            },
-                          )
-                        }
-                        winGame={() =>
-                          this.setState({
-                            running: false,
-                            victory: true,
-                          })
-                        }
-                        // squareOpen={() => {
-                        // }}
-                        // squaresOpened={this.squaresOpened}
-                      />
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
+              <BoardGrid
+                grid={grid}
+                key={key}
+                loseGame={() =>
+                  this.setState({ running: false, victory: false })
+                }
+                running={running}
+                winGame={() =>
+                  this.setState({
+                    running: false,
+                    victory: true,
+                  })
+                }
+              />
             </table>
           </Grid>
           <Fab
@@ -573,7 +516,7 @@ export default class App extends React.Component {
             disabled={!running || thinking}
             onClick={() => {
               this.setState({ thinking: true });
-              // setTimeout(this.calculate, 125);
+              setTimeout(this.calculate, 125);
             }}
           >
             <IoMdHelp size={32} />

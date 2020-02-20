@@ -52,19 +52,14 @@ class Cell extends Component {
     if (!open && !flag && running) {
       this.open = true;
       this.setState({ open: true });
-      // openingPostScripts();
-
-      // const { grid } = this.state;
-
       cell.open = true;
       cell.isWild = false;
+
       if (cell.bomb) {
         helper.setSquaresOpened(0);
         helper.setTotalGuesses(0);
         return loseGame();
-        // return loseGame(false);
       }
-      // cell.isWild = false;
 
       if (helper.getTotalGuesses()) {
         refreshBoard();
@@ -84,7 +79,6 @@ class Cell extends Component {
         helper.getRows() * helper.getColumns() - helper.getBombs()
       ) {
         helper.setSquaresOpened(0);
-        // this.totalGuesses = 0;
         return winGame();
       }
 
@@ -143,7 +137,6 @@ class Cell extends Component {
     const { flag } = this.state;
     return (
       <td
-        // key={cell}
         onClick={() => {
           this.recursiveOpener();
         }}
@@ -186,8 +179,13 @@ Cell.propTypes = {
   }).isRequired,
   // changeVictory: PropTypes.func.isRequired,
   guessBomb: PropTypes.number,
-  openingPostScripts: PropTypes.func.isRequired,
+  loseGame: PropTypes.func.isRequired,
+  openAround: PropTypes.func.isRequired,
+  refreshBoard: PropTypes.func.isRequired,
+  // openingPostScripts: PropTypes.func.isRequired,
   running: PropTypes.bool.isRequired,
+  updateWilds: PropTypes.func.isRequired,
+  winGame: PropTypes.func.isRequired,
 };
 
 export default Cell;
