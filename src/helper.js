@@ -78,6 +78,30 @@ class BoardHelper {
   incrementSquaresOpened(squaresOpened = 1) {
     this.squaresOpened += squaresOpened;
   }
+
+  setGrid(grid) {
+    this.grid = grid;
+  }
+
+  getGridCell(row, column) {
+    return this.grid[row][column];
+  }
+
+  getGrid() {
+    return this.grid;
+  }
+
+  getGridProperty(row, column, property) {
+    return this.grid[row][column][property];
+  }
+
+  setGridProperty(row, column, property, value) {
+    this.grid[row][column][property] = value;
+  }
+
+  incrementGridProperty(row, column, property, value = 1) {
+    this.grid[row][column][property] += value;
+  }
 }
 
 export default new BoardHelper();

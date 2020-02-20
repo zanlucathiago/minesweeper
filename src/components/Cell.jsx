@@ -9,6 +9,9 @@ const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 class Cell extends Component {
   constructor(props) {
     super(props);
+    if (props.cell.open) {
+      this.recursiveOpener();
+    }
     this.state = {
       flag: false,
       open: false,
@@ -39,7 +42,7 @@ class Cell extends Component {
 
   recursiveOpener = () => {
     const {
-      cell,
+      // cell,
       loseGame,
       openAround,
       refreshBoard,
@@ -55,7 +58,7 @@ class Cell extends Component {
       // openingPostScripts();
 
       // const { grid } = this.state;
-
+      helper.setGridProperty();
       cell.open = true;
       cell.isWild = false;
       if (cell.bomb) {
@@ -92,7 +95,7 @@ class Cell extends Component {
       if (!cell.number) {
         openAround();
         // Chamar o render para ativar os gatilhos
-        refreshBoard();
+        // refreshBoard();
       } else {
         updateWilds();
       }
@@ -106,8 +109,8 @@ class Cell extends Component {
   renderCell = () => {
     const { cell } = this.props;
     const { bomb, number } = cell;
-    const { flag } = this.state;
-    if (cell.open) {
+    const { flag, open } = this.state;
+    if (open) {
       if (bomb) {
         return <FaBomb size={22} style={{ margin: '0.25rem 0 0 0' }} />;
       }
@@ -140,9 +143,9 @@ class Cell extends Component {
 
   render() {
     const { cell } = this.props;
-    const { flag } = this.state;
+    const { flag, open } = this.state;
     return (
-      <td
+      <div
         // key={cell}
         onClick={() => {
           this.recursiveOpener();
@@ -152,20 +155,21 @@ class Cell extends Component {
           this.setState({ flag: !flag });
           e.preventDefault();
         }}
-        role="gridcell"
+        // role="gridcell"
         style={{
           backgroundColor: this.setBackgroundColor(),
-          boxShadow: cell.open
+          boxShadow: open
             ? 'inset 1px 1px 4px 1px #777'
             : 'inset -1px -1px 4px 1px #333',
           textAlign: 'center',
           width: '2rem',
           height: '2rem',
           display: 'inline-block',
+          ...this.props.style,
         }}
       >
         {this.renderCell()}
-      </td>
+      </div>
     );
   }
 }
