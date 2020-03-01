@@ -12,6 +12,7 @@ import {
 } from '@material-ui/core';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
+import Board from '../Board.json';
 
 class SetupDialog extends Component {
   constructor(props) {
@@ -39,13 +40,21 @@ class SetupDialog extends Component {
               value={size}
               onChange={(e) => this.setState({ size: e.target.value })}
             >
-              <FormControlLabel value="sm" control={<Radio />} label="Fácil" />
+              {Object.entries(Board).map(([key, value]) => (
+                <FormControlLabel
+                  key={key}
+                  value={key}
+                  control={<Radio />}
+                  label={value.name}
+                />
+              ))}
+              {/* <FormControlLabel value="sm" control={<Radio />} label="Fácil" />
               <FormControlLabel value="md" control={<Radio />} label="Médio" />
               <FormControlLabel
                 value="lg"
                 control={<Radio />}
                 label="Difícil"
-              />
+              /> */}
             </RadioGroup>
           </FormControl>
         </DialogContent>

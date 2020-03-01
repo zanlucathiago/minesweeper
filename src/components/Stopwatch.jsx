@@ -40,8 +40,8 @@ class Stopwatch extends Component {
 
   startWatch() {
     this.startTime = performance.now();
-    // this.runClock = setInterval(this.displayTime, 1000);
-    this.setState({ running: true });
+    this.runClock = setInterval(this.displayTime, 1000);
+    this.setState({ running: true, time: this.formatTime(0) });
   }
 
   stopWatch() {
@@ -49,7 +49,7 @@ class Stopwatch extends Component {
     this.endTime = performance.now();
     this.counter = 0;
     clearInterval(this.runClock);
-    this.setState({ running: false, time: this.formatTime(0) });
+    this.setState({ running: false });
     // this.props.openFeedback(this.endTime - this.startTime);
     saveRecord(this.endTime - this.startTime);
   }

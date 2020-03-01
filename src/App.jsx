@@ -25,15 +25,17 @@ import LocalStorage from './LocalStorage';
 import DocsDialog from './components/DocsDialog';
 import helper from './helper';
 import BoardGrid from './components/BoardGrid';
+import AboutDialog from './components/AboutDialog';
+import UserDialog from './components/UserDialog';
 
 export default class App extends React.Component {
-  squaresOpened = 0;
+  // squaresOpened = 0;
 
-  totalGuesses = 0;
+  // totalGuesses = 0;
 
-  min = {
-    guessBomb: null,
-  };
+  // min = {
+  //   guessBomb: null,
+  // };
 
   constructor(props) {
     super(props);
@@ -62,14 +64,15 @@ export default class App extends React.Component {
     // eslint-disable-next-line
     const _id = LocalStorage.getPlayer();
     Actions.getPlayer({ _id })
-      .then(({ data }) =>
+      .then(({ data }) => {
+        this.fetchPicture(_id);
         this.setState({
           player: _id,
           name: data.name,
           dialog: null,
           loading: false,
-        }),
-      )
+        });
+      })
       .catch(this.askForAuth);
   }
 
@@ -180,92 +183,102 @@ export default class App extends React.Component {
 
     this.checkValuesForNextCell(0, 0, 0, currGrid);
 
-    helper.setMin(
-      _.minBy(
-        _.filter(
-          grid.map((row, rowId) =>
-            _.minBy(
-              _.filter(
-                row.map((o, colId) => {
-                  if (!o.guessBomb) {
-                    grid[rowId][colId].noBomb = true;
-                  }
-                  return o;
-                }),
-                ['open', false],
-              ),
-              'guessBomb',
-            ),
-          ),
-          (o) => o,
-        ),
-        'guessBomb',
-      ),
-    );
+    if (!helper.getError()) {
+      const guessesMatrix = grid.map((row, rowId) => {
+        const guessesList = row.map((o, colId) => {
+          if (!o.guessBomb) {
+            grid[rowId][colId].noBomb = true;
+          }
+          return o;
+        });
 
-    this.setState({
-      alertInfo: helper.getMin().guessBomb
-        ? `${Math.round(
-            (100 * helper.getMin().guessBomb) / helper.getTotalGuesses(),
-          )}% de chance de ter mina na região destacada em verde.`
-        : `A região destacada em azul não tem minas!`,
-      grid,
-      thinking: false,
-    });
+        return _.minBy(_.filter(guessesList, ['open', false]), 'guessBomb');
+      });
+
+      helper.setMin(
+        _.minBy(
+          _.filter(guessesMatrix, (o) => o),
+          'guessBomb',
+        ),
+      );
+
+      this.setState({
+        alertInfo: helper.getMin().guessBomb
+          ? `${Math.round(
+              (100 * helper.getMin().guessBomb) / helper.getTotalGuesses(),
+            )}% de chance de ter mina na região destacada em verde.`
+          : `A região destacada em azul não tem minas!`,
+        grid,
+        // thinking: false,
+      });
+    } else {
+      helper.setError(false);
+      this.setState({
+        alert: 'Não foi possivel requerer ajuda, tente novamente mais tarde',
+      });
+    }
+    this.setState({ thinking: false });
   };
 
   checkValuesForNextCell = (currBombs, currRow, currCol, currGrid) => {
-    const { grid } = this.state;
-    let nextRow = currRow;
-    let nextCol = currCol + 1;
+    if (!helper.getError()) {
+      const { grid } = this.state;
+      let nextRow = currRow;
+      let nextCol = currCol + 1;
 
-    if (nextCol === helper.getColumns()) {
-      nextCol = 0;
-      nextRow += 1;
-    }
+      if (nextCol === helper.getColumns()) {
+        nextCol = 0;
+        nextRow += 1;
+      }
 
-    if (!currCol && currRow === helper.getRows()) {
-      const wildBombs = helper.getBombs() - currBombs;
-      if (wildBombs <= helper.getTotalWild()) {
-        const wildCombinations = this.combinations(
-          helper.getTotalWild(),
-          wildBombs,
-        );
-        currGrid.forEach((row, rowId) =>
-          row.forEach((cell, colId) => {
-            if (grid[rowId][colId].isWild) {
-              grid[rowId][colId].guessBomb +=
-                (wildCombinations * wildBombs) / helper.getTotalWild();
-            } else {
-              grid[rowId][colId].guessBomb += cell * wildCombinations;
-            }
-          }),
-        );
-        helper.incrementTotalGuesses(wildCombinations);
-      }
-    } else {
-      let nextGrid = JSON.parse(JSON.stringify(currGrid));
-      nextGrid[currRow][currCol] = 0;
-      if (
-        currGrid[currRow][currCol] !== 1 &&
-        !this.checkAround(currRow, currCol, nextGrid)
-      ) {
-        this.checkValuesForNextCell(currBombs, nextRow, nextCol, nextGrid);
-      }
-      const currCel = grid[currRow][currCol];
-      if (!currCel.open && currBombs < helper.getBombs() && !currCel.isWild) {
-        nextGrid = JSON.parse(JSON.stringify(currGrid));
-        nextGrid[currRow][currCol] = 1;
+      if (!currCol && currRow === helper.getRows()) {
+        const wildBombs = helper.getBombs() - currBombs;
+        if (wildBombs <= helper.getTotalWild()) {
+          const wildCombinations = this.combinations(
+            helper.getTotalWild(),
+            wildBombs,
+          );
+
+          if (wildCombinations) {
+            currGrid.forEach((row, rowId) =>
+              row.forEach((cell, colId) => {
+                if (grid[rowId][colId].isWild) {
+                  grid[rowId][colId].guessBomb +=
+                    (wildCombinations * wildBombs) / helper.getTotalWild();
+                } else {
+                  grid[rowId][colId].guessBomb += cell * wildCombinations;
+                }
+              }),
+            );
+            helper.incrementTotalGuesses(wildCombinations);
+          } else {
+            helper.setError(true);
+          }
+        }
+      } else {
+        let nextGrid = JSON.parse(JSON.stringify(currGrid));
+        nextGrid[currRow][currCol] = 0;
         if (
-          currGrid[currRow][currCol] === 1 ||
+          currGrid[currRow][currCol] !== 1 &&
           !this.checkAround(currRow, currCol, nextGrid)
         ) {
-          this.checkValuesForNextCell(
-            currBombs + 1,
-            nextRow,
-            nextCol,
-            nextGrid,
-          );
+          this.checkValuesForNextCell(currBombs, nextRow, nextCol, nextGrid);
+        }
+        const currCel = grid[currRow][currCol];
+        if (!currCel.open && currBombs < helper.getBombs() && !currCel.isWild) {
+          nextGrid = JSON.parse(JSON.stringify(currGrid));
+          nextGrid[currRow][currCol] = 1;
+          if (
+            currGrid[currRow][currCol] === 1 ||
+            !this.checkAround(currRow, currCol, nextGrid)
+          ) {
+            this.checkValuesForNextCell(
+              currBombs + 1,
+              nextRow,
+              nextCol,
+              nextGrid,
+            );
+          }
         }
       }
     }
@@ -339,7 +352,13 @@ export default class App extends React.Component {
     }));
   };
 
+  fetchPicture = (_id) =>
+    Actions.downloadImage(_id).then((response) =>
+      this.setState({ fileURL: URL.createObjectURL(new Blob([response])) }),
+    );
+
   startGame = (player, name) => {
+    this.fetchPicture(player);
     this.setState({ alertSuccess: 'Bom jogo!', player, name });
     LocalStorage.setPlayer(player);
     this.closeDialogs();
@@ -365,12 +384,29 @@ export default class App extends React.Component {
     this.setState({ dialog: 'docs' });
   };
 
+  openAbout = () => {
+    this.setState({ dialog: 'about' });
+  };
+
+  openUser = () => {
+    this.setState({ dialog: 'user' });
+  };
+
+  confirmSavedUser = (fileURL) => {
+    this.setState({
+      alertSuccess: 'Alterações gravadas',
+      dialog: null,
+      fileURL,
+    });
+  };
+
   render() {
     const {
       alert,
       alertInfo,
       alertSuccess,
       dialog,
+      fileURL,
       grid,
       key,
       loading,
@@ -385,6 +421,15 @@ export default class App extends React.Component {
 
     return (
       <div>
+        {dialog === 'user' && (
+          <UserDialog
+            fileURL={fileURL}
+            handleClose={this.closeDialogs}
+            handleSave={this.confirmSavedUser}
+            name={name}
+            _id={player}
+          />
+        )}
         {dialog === 'form' && (
           <FormDialog
             handleClose={(msg) => {
@@ -397,13 +442,16 @@ export default class App extends React.Component {
         )}
         {dialog === 'docs' && <DocsDialog handleClose={this.closeDialogs} />}
         <Toolbar
+          fileURL={fileURL}
           logout={this.askForAuth}
           name={name}
           _id={player}
+          openAbout={this.openAbout}
           openDocs={this.openDocs}
           openFeedback={this.openFeedback}
           openForm={this.openForm}
           openSettings={this.openSettings}
+          openUser={this.openUser}
         />
         <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
           {alert && (
@@ -462,6 +510,9 @@ export default class App extends React.Component {
               setChanges={this.setChanges}
               size={size}
             />
+          )}
+          {dialog === 'about' && (
+            <AboutDialog handleClose={this.closeDialogs} />
           )}
           <Grid container spacing={3} style={{ justifyContent: 'center' }}>
             <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>

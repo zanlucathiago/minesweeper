@@ -16,8 +16,9 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Box,
 } from '@material-ui/core';
-import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+import { ToggleButton, ToggleButtonGroup, Rating } from '@material-ui/lab';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 import PropTypes from 'prop-types';
@@ -95,7 +96,13 @@ class FeedbackDialog extends Component {
           Ranking {formats[0] !== 'player' ? 'Pessoal' : 'Global'}
         </DialogTitle>
         <DialogContent>
-          {content && <DialogContentText>{content}</DialogContentText>}
+          {/* {content && [ */}
+          <DialogContentText key={0}>{content}</DialogContentText>,
+          <Box component="fieldset" key={1} mb={3} borderColor="transparent">
+            {/* <Typography component="legend">Read only</Typography> */}
+            <Rating name="read-only" value={3.3} readOnly />
+          </Box>
+          ,{/* ]} */}
           <Grid
             style={{
               marginBottom: 8,

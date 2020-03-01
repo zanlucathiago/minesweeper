@@ -11,6 +11,7 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import Actions from '../Actions';
 import Progress from './Progress';
+import Alert from './Alert';
 
 const numbers = Array(10)
   .fill('')
@@ -20,6 +21,9 @@ class FormDialog extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      email: '',
+      message: '',
+      name: '',
       phone: '',
     };
   }
@@ -63,7 +67,9 @@ class FormDialog extends Component {
     this.setState({ loading: true });
     Actions.sendMail({ name, email, phone, message })
       .then(this.finish)
-      .catch();
+      .catch((error) => {
+        this.setState({ alert: error.message, loading: false });
+      });
   };
 
   finish = ({ data }) => {
@@ -72,14 +78,24 @@ class FormDialog extends Component {
   };
 
   render() {
-    const { loading, name, message, email, phone } = this.state;
+    const { alert, loading, name, message, email, phone } = this.state;
     return (
       <Dialog open onClose={this.handleClose}>
+        {alert && (
+          <Alert
+            onClose={() => {
+              this.setState({ alert: null });
+            }}
+            severity="error"
+          >
+            {alert}
+          </Alert>
+        )}
         {loading && <Progress />}
         <DialogTitle>Mensagem</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Envie sugestões, dúvidas, reclamações etc.
+            Envie reclamações, sugestões, dúvidas etc.
           </DialogContentText>
           <TextField
             label="Nome"

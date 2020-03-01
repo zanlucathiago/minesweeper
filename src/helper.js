@@ -7,6 +7,14 @@ class BoardHelper {
     this.rows = rows;
   }
 
+  getError() {
+    return this.error;
+  }
+
+  setError(error) {
+    this.error = error;
+  }
+
   getColumns() {
     return this.columns;
   }

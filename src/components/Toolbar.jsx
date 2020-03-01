@@ -11,12 +11,13 @@ import {
   Typography,
   Menu,
   MenuItem,
+  Avatar,
 } from '@material-ui/core';
-import AccountCircle from '@material-ui/icons/AccountCircle';
 import ChartIcon from '@material-ui/icons/BarChart';
 import ListIcon from '@material-ui/icons/FormatListNumbered';
 import MailIcon from '@material-ui/icons/Mail';
 import MenuIcon from '@material-ui/icons/Menu';
+import InfoIcon from '@material-ui/icons/Info';
 // import LibraryBooks from '@material-ui/icons/LibraryBooks';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -29,22 +30,10 @@ class Toolbar extends Component {
 
   constructor(props) {
     super(props);
-    // const { name } = props;
     this.state = {
       drawerOpen: false,
-      // name,
     };
   }
-
-  // componentDidMount() {
-  //   const { name } = this.state;
-  //   const { _id } = this.props;
-  //   if (!name) {
-  //     Actions.getPlayer({ _id }).then(({ data }) =>
-  //       this.setState({ name: data.name }),
-  //     );
-  //   }
-  // }
 
   onSelectItem = (callback) => {
     this.closeDrawer();
@@ -83,11 +72,18 @@ class Toolbar extends Component {
         onClose={this.handleMenuClose}
       >
         {/* <MenuItem onClick={this.handleMenuClose}>Profile</MenuItem> */}
-        <MenuItem disabled>{name}</MenuItem>
+        {/* <MenuItem onClick={this.openUser}>{name}</MenuItem> */}
+        <MenuItem onClick={this.openUser}>{name}</MenuItem>
         <Divider />
         <MenuItem onClick={this.handleLogout}>Sair</MenuItem>
       </Menu>
     );
+  };
+
+  openUser = () => {
+    const { openUser } = this.props;
+    this.handleMenuClose();
+    openUser();
   };
 
   handleLogout = () => {
@@ -99,7 +95,13 @@ class Toolbar extends Component {
 
   render() {
     const { drawerOpen } = this.state;
-    const { openFeedback, openForm, openSettings } = this.props;
+    const {
+      fileURL,
+      openFeedback,
+      openForm,
+      openSettings,
+      openAbout,
+    } = this.props;
     return (
       <AppBar position="static">
         <SwipeableDrawer
@@ -118,12 +120,12 @@ class Toolbar extends Component {
             <List>
               {[
                 {
-                  label: 'Nível',
+                  label: 'Estágios',
                   icon: <ChartIcon />,
                   onClick: () => this.onSelectItem(openSettings),
                 },
                 {
-                  label: 'Recordes',
+                  label: 'Resultados',
                   icon: <ListIcon />,
                   onClick: () => this.onSelectItem(openFeedback),
                 },
@@ -138,6 +140,7 @@ class Toolbar extends Component {
             <List>
               {[
                 { label: 'Contato', icon: <MailIcon />, onClick: openForm },
+                { label: 'Sobre', icon: <InfoIcon />, onClick: openAbout },
                 // {
                 //   label: 'Como jogar?',
                 //   icon: <LibraryBooks />,
@@ -182,7 +185,8 @@ class Toolbar extends Component {
               onClick={this.handleProfileMenuOpen}
               color="inherit"
             >
-              <AccountCircle />
+              <Avatar src={fileURL} />
+              {/* <AccountCircle /> */}
             </IconButton>
             {/* <Menu
               id="menu-appbar"
@@ -212,18 +216,22 @@ class Toolbar extends Component {
 }
 
 Toolbar.defaultProps = {
+  fileURL: '',
   name: '',
   // _id: '',
 };
 
 Toolbar.propTypes = {
+  fileURL: PropTypes.string,
   logout: PropTypes.func.isRequired,
   name: PropTypes.string,
   // _id: PropTypes.string,
   // openDocs: PropTypes.func.isRequired,
+  openAbout: PropTypes.func.isRequired,
   openFeedback: PropTypes.func.isRequired,
   openForm: PropTypes.func.isRequired,
   openSettings: PropTypes.func.isRequired,
+  openUser: PropTypes.func.isRequired,
 };
 
 export default Toolbar;
