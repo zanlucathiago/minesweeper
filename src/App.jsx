@@ -1,14 +1,8 @@
-import {
-  Button,
-  CircularProgress,
-  Container,
-  Fab,
-  Grid,
-} from '@material-ui/core';
+import { CircularProgress, Container, Fab, Grid } from '@material-ui/core';
 import _ from 'lodash';
 import moment from 'moment';
 import React from 'react';
-import { FaPlay, FaStop } from 'react-icons/fa';
+import { FaPlay } from 'react-icons/fa';
 import { IoMdHelp } from 'react-icons/io';
 import Actions from './Actions';
 import './App.css';
@@ -27,16 +21,11 @@ import helper from './helper';
 import BoardGrid from './components/BoardGrid';
 import AboutDialog from './components/AboutDialog';
 import UserDialog from './components/UserDialog';
+import { GlobalProvider } from './context/GlobalState';
+import TimeField from './components/TimeField';
+import BombCounter from './components/BombCounter';
 
 export default class App extends React.Component {
-  // squaresOpened = 0;
-
-  // totalGuesses = 0;
-
-  // min = {
-  //   guessBomb: null,
-  // };
-
   constructor(props) {
     super(props);
     const size = LocalStorage.getLevel();
@@ -63,6 +52,7 @@ export default class App extends React.Component {
   componentDidMount() {
     // eslint-disable-next-line
     const _id = LocalStorage.getPlayer();
+    this.fetchDisplayRecords();
     Actions.getPlayer({ _id })
       .then(({ data }) => {
         this.fetchPicture(_id);
@@ -131,11 +121,26 @@ export default class App extends React.Component {
     helper.setBombs(bombs);
   };
 
+  fetchDisplayRecords = () => {
+    Actions.getRecords().then(({ data }) => {
+      const [, records] = data;
+      this.updateRecords(records);
+    });
+  };
+
+  updateRecords = (records) => {
+    this.setState({
+      currentPlayerRecords: records,
+      worldRecord: records[0].performance,
+      lastRecord: records[records.length - 1].performance,
+    });
+  };
+
   setChanges = (size) => {
     const { key } = this.state;
     this.updateDimensions(size);
     LocalStorage.setLevel(size);
-
+    this.fetchDisplayRecords();
     this.setState({
       grid: this.generateGrid(),
       key: !key,
@@ -209,7 +214,6 @@ export default class App extends React.Component {
             )}% de chance de ter mina na região destacada em verde.`
           : `A região destacada em azul não tem minas!`,
         grid,
-        // thinking: false,
       });
     } else {
       helper.setError(false);
@@ -365,16 +369,36 @@ export default class App extends React.Component {
   };
 
   saveRecord = (performance) => {
-    const { player, victory } = this.state;
+    const { currentPlayerRecords, player, victory, worldRecord } = this.state;
+
     if (victory) {
       Actions.addRecord({
         player,
         performance,
         level: LocalStorage.getLevel(),
-      }).then(() => {
-        this.setState({ dialog: 'feedback', loading: false });
+      }).then(() => this.setState({ dialog: 'feedback', loading: false }));
+
+      const { length } = currentPlayerRecords;
+      const idx = _.findIndex(
+        currentPlayerRecords,
+        (o) => o.performance >= performance,
+      );
+
+      this.setState({
+        loading: true,
+        performance,
+        rating: length - (idx === -1 ? length : idx),
+        // rating: [
+        //   length -
+        //     _.findIndex(
+        //       currentPlayerRecords,
+        //       (o) => o.performance >= performance,
+        //     ),
+        //   length,
+        // ],
+        worldRecord: Math.min(worldRecord, performance),
+        lastRecord: performance,
       });
-      this.setState({ loading: true, performance });
     } else {
       this.setState({ alert: 'Jogo encerrado.' });
     }
@@ -409,18 +433,21 @@ export default class App extends React.Component {
       fileURL,
       grid,
       key,
+      lastRecord,
       loading,
       name,
       player,
       thinking,
       performance,
+      rating,
       running,
       size,
       victory,
+      worldRecord,
     } = this.state;
 
     return (
-      <div>
+      <GlobalProvider>
         {dialog === 'user' && (
           <UserDialog
             fileURL={fileURL}
@@ -492,16 +519,14 @@ export default class App extends React.Component {
               handleClose={this.closeDialogs}
               content={
                 victory &&
-                `Tempo: ${
-                  performance
-                    ? moment()
-                        .minute(0)
-                        .second(0)
-                        .millisecond(performance)
-                        .format('mm:ss.SSS')
-                    : '01:23:456'
-                }`
+                `Tempo: ${moment()
+                  .minute(0)
+                  .second(0)
+                  .millisecond(performance)
+                  .format('mm:ss.SSS')}`
               }
+              rating={rating}
+              updateRecords={this.updateRecords}
             />
           )}
           {dialog === 'setup' && (
@@ -515,10 +540,52 @@ export default class App extends React.Component {
             <AboutDialog handleClose={this.closeDialogs} />
           )}
           <Grid container spacing={3} style={{ justifyContent: 'center' }}>
-            <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={6}
+              md={3}
+            >
+              <TimeField
+                // format="mm:ss:SSS"
+                // context="date"
+                key={key}
+                label="Melhor tempo"
+                value={worldRecord}
+                // value={worldRecord / 1000}
+              />
+            </Grid>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={6}
+              md={3}
+            >
+              <TimeField
+                // context="performance"
+                // format="mm:ss:SSS"
+                key={key}
+                label="Último tempo"
+                value={lastRecord}
+              />
+            </Grid>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={6}
+              md={3}
+            >
+              <BombCounter />
+            </Grid>
+            <Grid
+              item
+              style={{ margin: 'auto', textAlign: 'center' }}
+              xs={6}
+              md={3}
+            >
               <Stopwatch saveRecord={this.saveRecord} running={running} />
             </Grid>
-            <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>
+            {/* <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>
               <Button
                 onClick={this.onClickPlay}
                 variant="contained"
@@ -527,7 +594,7 @@ export default class App extends React.Component {
               >
                 {running ? 'Parar' : 'Iniciar'}
               </Button>
-            </Grid>
+            </Grid> */}
           </Grid>
           <Grid
             item
@@ -551,6 +618,7 @@ export default class App extends React.Component {
                 loseGame={() =>
                   this.setState({ running: false, victory: false })
                 }
+                onClickPlay={this.onClickPlay}
                 running={running}
                 winGame={() =>
                   this.setState({
@@ -561,17 +629,28 @@ export default class App extends React.Component {
               />
             </table>
           </Grid>
-          <Fab
-            color="secondary"
-            style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
-            disabled={!running || thinking}
-            onClick={() => {
-              this.setState({ thinking: true });
-              setTimeout(this.calculate, 125);
-            }}
-          >
-            <IoMdHelp size={32} />
-          </Fab>
+          {running ? (
+            <Fab
+              color="primary"
+              style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
+              disabled={thinking}
+              onClick={() => {
+                this.setState({ thinking: true });
+                setTimeout(this.calculate, 125);
+              }}
+            >
+              <IoMdHelp size={32} />
+            </Fab>
+          ) : (
+            <Fab
+              color="secondary"
+              style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
+              // disabled={!running || thinking}
+              onClick={this.onClickPlay}
+            >
+              <FaPlay size={23} />
+            </Fab>
+          )}
           {thinking && (
             <CircularProgress
               size={68}
@@ -584,7 +663,7 @@ export default class App extends React.Component {
             />
           )}
         </Container>
-      </div>
+      </GlobalProvider>
     );
   }
 }

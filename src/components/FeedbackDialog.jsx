@@ -16,7 +16,7 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Box,
+  // Box,
 } from '@material-ui/core';
 import { ToggleButton, ToggleButtonGroup, Rating } from '@material-ui/lab';
 import moment from 'moment';
@@ -36,7 +36,7 @@ class FeedbackDialog extends Component {
     super(props);
     this.state = {
       formats: LocalStorage.getFormats(),
-      data: [],
+      data: [[], []],
       loading: true,
     };
   }
@@ -47,14 +47,19 @@ class FeedbackDialog extends Component {
   }
 
   handleFormat = (e, newFormats) => {
-    this.fetchRecords(newFormats);
+    // this.fetchRecords(newFormats);
     LocalStorage.setFormats(newFormats);
-    this.setState({ formats: newFormats, loading: true });
+    // this.setState({ formats: newFormats, loading: true });
+    this.setState({ formats: newFormats });
   };
 
   fetchRecords = (newFormats) => {
+    const { updateRecords } = this.props;
     Actions.getRecords(newFormats)
-      .then(({ data }) => this.setState({ data, loading: false }))
+      .then(({ data }) => {
+        updateRecords(data[1]);
+        this.setState({ data, loading: false });
+      })
       .catch(({ response }) =>
         this.setState({
           alert: response ? response.data : 'Estamos com problemas no servidor',
@@ -70,7 +75,7 @@ class FeedbackDialog extends Component {
 
   render() {
     const { alert, alertInfo, data, formats, loading } = this.state;
-    const { content } = this.props;
+    const { content, rating } = this.props;
     return (
       <Dialog open onClose={this.handleClose}>
         {alert && (
@@ -96,13 +101,30 @@ class FeedbackDialog extends Component {
           Ranking {formats[0] !== 'player' ? 'Pessoal' : 'Global'}
         </DialogTitle>
         <DialogContent>
-          {/* {content && [ */}
-          <DialogContentText key={0}>{content}</DialogContentText>,
-          <Box component="fieldset" key={1} mb={3} borderColor="transparent">
-            {/* <Typography component="legend">Read only</Typography> */}
-            <Rating name="read-only" value={3.3} readOnly />
-          </Box>
-          ,{/* ]} */}
+          {content && [
+            <DialogContentText key="performance">{content}</DialogContentText>,
+            // <Box component="fieldset" key={1} mb={3} borderColor="transparent">
+            // {/* <Typography component="legend">Read only</Typography> */}
+            <DialogContentText key="rating">
+              <Rating
+                // max={rating[1]}
+                max={rating}
+                name="read-only"
+                // value={rating[0]}
+                value={rating}
+                readOnly
+              />
+            </DialogContentText>,
+            // </Box>,
+          ]}
+          {/* <Rating
+            // max={rating[1]}
+            max={1}
+            name="read-only"
+            // value={rating[0]}
+            value={1}
+            readOnly
+          /> */}
           <Grid
             style={{
               marginBottom: 8,
@@ -175,7 +197,7 @@ class FeedbackDialog extends Component {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data.map((row, index) => (
+                {data[formats[0] !== 'player' ? 1 : 0].map((row, index) => (
                   <TableRow key={row._id}>
                     <TableCell align="right">{index + 1}</TableCell>
                     <TableCell component="th" scope="row">
@@ -216,13 +238,13 @@ class FeedbackDialog extends Component {
 
 FeedbackDialog.defaultProps = {
   content: '',
-  title: '',
+  // title: '',
 };
 
 FeedbackDialog.propTypes = {
   content: PropTypes.string,
   handleClose: PropTypes.func.isRequired,
-  title: PropTypes.string,
+  // title: PropTypes.string,
 };
 
 export default FeedbackDialog;

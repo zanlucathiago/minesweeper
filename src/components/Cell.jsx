@@ -1,14 +1,16 @@
 import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import React, { Component, useContext } from 'react';
 import { FaBomb } from 'react-icons/fa';
 import { IoIosFlag } from 'react-icons/io';
 import helper from '../helper';
+import { GlobalContext } from '../context/GlobalState';
 
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
-class Cell extends Component {
+class ComponentImpl extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
       flag: false,
       open: false,
@@ -141,6 +143,12 @@ class Cell extends Component {
           this.recursiveOpener();
         }}
         onContextMenu={(e) => {
+          if (cell.flag) {
+            this.props.removeFlag();
+          } else {
+            this.props.addFlag();
+          }
+
           cell.flag = !cell.flag;
           this.setState({ flag: !flag });
           e.preventDefault();
@@ -163,11 +171,16 @@ class Cell extends Component {
   }
 }
 
-Cell.defaultProps = {
+function Cell(props) {
+  // const appContext = useContext(AppContext);
+  const { removeFlag, addFlag } = useContext(GlobalContext);
+  return <ComponentImpl removeFlag={removeFlag} addFlag={addFlag} {...props} />;
+}
+ComponentImpl.defaultProps = {
   guessBomb: null,
 };
 
-Cell.propTypes = {
+ComponentImpl.propTypes = {
   // backgroundColor: PropTypes.string.isRequired,
   cell: PropTypes.exact({
     flag: PropTypes.bool,
@@ -187,5 +200,4 @@ Cell.propTypes = {
   updateWilds: PropTypes.func.isRequired,
   winGame: PropTypes.func.isRequired,
 };
-
 export default Cell;

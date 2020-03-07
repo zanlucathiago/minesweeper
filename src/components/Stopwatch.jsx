@@ -1,7 +1,9 @@
 import { TextField } from '@material-ui/core';
 import moment from 'moment';
 import PropTypes from 'prop-types';
+// import React, { Component, useContext } from 'react';
 import React, { Component } from 'react';
+// import { GlobalContext } from '../context/GlobalState';
 
 class Stopwatch extends Component {
   counter = 0;
@@ -25,18 +27,19 @@ class Stopwatch extends Component {
   }
 
   displayTime = () => {
-    this.counter = this.counter + 1;
+    this.counter = this.counter + 1000;
     this.setState({
       time: this.formatTime(this.counter),
     });
   };
 
-  formatTime = (seconds) =>
+  formatTime = (milliseconds) =>
     moment()
       .hour(0)
       .minute(0)
-      .second(seconds)
-      .format('HH : mm : ss');
+      .second(0)
+      .millisecond(milliseconds)
+      .format('mm:ss.SSS');
 
   startWatch() {
     this.startTime = performance.now();
@@ -49,19 +52,21 @@ class Stopwatch extends Component {
     this.endTime = performance.now();
     this.counter = 0;
     clearInterval(this.runClock);
-    this.setState({ running: false });
+    const currPerformance = this.endTime - this.startTime;
+    this.setState({ running: false, time: this.formatTime(currPerformance) });
     // this.props.openFeedback(this.endTime - this.startTime);
-    saveRecord(this.endTime - this.startTime);
+    saveRecord(currPerformance);
   }
 
   render() {
     const { time } = this.state;
     return (
       <TextField
+        inputProps={{ min: 0, style: { textAlign: 'center' } }}
         disabled
         label="Tempo"
         size="small"
-        style={{ width: 108 }}
+        style={{ width: 100 }}
         value={time}
         variant="outlined"
       />
@@ -69,9 +74,22 @@ class Stopwatch extends Component {
   }
 }
 
-Stopwatch.propTypes = {
-  running: PropTypes.bool.isRequired,
-  saveRecord: PropTypes.func.isRequired,
+// function Stopwatch(props) {
+//   // const appContext = useContext(AppContext);
+//   const { currentBombsRemaining } = useContext(GlobalContext);
+//   return (
+//     <ComponentImpl currentBombsRemaining={currentBombsRemaining} {...props} />
+//   );
+// }
+Stopwatch.defaultProps = {
+  running: false,
+  saveRecord: () => {},
+  // value: 0,
 };
 
+Stopwatch.propTypes = {
+  running: PropTypes.bool,
+  saveRecord: PropTypes.func,
+  // value: PropTypes.number,
+};
 export default Stopwatch;

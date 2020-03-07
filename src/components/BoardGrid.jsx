@@ -50,7 +50,7 @@ class BoardGrid extends Component {
 }
 
 BoardGrid.propTypes = {
-  grid: PropTypes.arrayOf().isRequired,
+  grid: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.shape())).isRequired,
   loseGame: PropTypes.func.isRequired,
   running: PropTypes.bool.isRequired,
   winGame: PropTypes.func.isRequired,

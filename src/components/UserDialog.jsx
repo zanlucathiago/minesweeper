@@ -1,20 +1,21 @@
 import imageCompression from 'browser-image-compression';
 import React from 'react';
 import {
-  Slide,
+  // Slide,
   Dialog,
   DialogContent,
   DialogActions,
   Button,
   Avatar,
 } from '@material-ui/core';
+import PropTypes from 'prop-types';
 import Actions from '../Actions';
 import Alert from './Alert';
 import Progress from './Progress';
 
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+// const Transition = React.forwardRef(function Transition(props, ref) {
+//   return <Slide direction="up" ref={ref} {...props} />;
+// });
 
 class UserDialog extends React.Component {
   constructor(props) {
@@ -64,8 +65,10 @@ class UserDialog extends React.Component {
   handleImageUpload = async (imageFile) => {
     try {
       return await imageCompression(imageFile, {
-        maxIteration: 32,
-        maxSizeMB: 0.0078125,
+        // maxIteration: 32,
+        maxIteration: 8,
+        // maxSizeMB: 0.0078125,
+        maxSizeMB: 0.03125,
         useWebWorker: true,
       });
     } catch (error) {
@@ -81,7 +84,7 @@ class UserDialog extends React.Component {
     return (
       <Dialog
         open
-        TransitionComponent={Transition}
+        // TransitionComponent={Transition}
         keepMounted
         onClose={this.handleClose}
       >
@@ -103,17 +106,17 @@ class UserDialog extends React.Component {
               src={urlFile}
               style={{ height: 160, margin: 'auto', width: 160 }}
             />
+            <input
+              accept="image/*"
+              id="icon-button-file"
+              onChange={(e) => {
+                this.changeImage(e);
+                this.setState({ loading: true });
+              }}
+              style={{ display: 'none' }}
+              type="file"
+            />
           </label>
-          <input
-            accept="image/*"
-            id="icon-button-file"
-            onChange={(e) => {
-              this.changeImage(e);
-              this.setState({ loading: true });
-            }}
-            style={{ display: 'none' }}
-            type="file"
-          />
         </DialogContent>
         <DialogActions>
           <Button color="primary" onClick={this.handleClose} variant="outlined">
@@ -127,5 +130,11 @@ class UserDialog extends React.Component {
     );
   }
 }
+
+UserDialog.propTypes = {
+  _id: PropTypes.number.isRequired,
+  handleSave: PropTypes.func.isRequired,
+  name: PropTypes.string.isRequired,
+};
 
 export default UserDialog;

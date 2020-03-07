@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  Slide,
+  // Slide,
   Dialog,
   DialogContent,
   DialogContentText,
@@ -11,23 +11,23 @@ import {
 import { version } from '../../package.json';
 
 const logo = require(`../unnamed(8).png`);
-const Transition = React.forwardRef(function Transition({
-  in: propIn,
-  timeout,
-  children,
-}) {
-  return (
-    <Slide direction="up" in={propIn} timeout={timeout}>
-      {children}
-    </Slide>
-  );
-});
+// const Transition = React.forwardRef(function Transition({
+//   in: propIn,
+//   timeout,
+//   children,
+// }) {
+//   return (
+//     <Slide direction="up" in={propIn} timeout={timeout}>
+//       {children}
+//     </Slide>
+//   );
+// });
 
 const AboutDialog = ({ handleClose }) => {
   return (
     <Dialog
       open
-      TransitionComponent={Transition}
+      // TransitionComponent={Transition}
       keepMounted
       onClose={handleClose}
     >
