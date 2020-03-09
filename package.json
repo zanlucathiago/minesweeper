@@ -1,4 +1,5 @@
 {
+  "homepage": "https://zanlucathiago.github.io/minesweeper",
   "name": "minesweeper",
   "version": "1.1.0",
   "private": true,
@@ -11,6 +12,7 @@
     "@testing-library/user-event": "^7.2.1",
     "axios": "^0.19.2",
     "browser-image-compression": "^1.0.6",
+    "gh-pages": "^2.2.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",
@@ -20,6 +22,8 @@
     "react-scripts": "3.3.0"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start --no-cache",
     "build": "react-scripts build",
     "test": "react-scripts test",
