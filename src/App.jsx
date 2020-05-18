@@ -53,6 +53,7 @@ export default class App extends React.Component {
     // eslint-disable-next-line
     const _id = LocalStorage.getPlayer();
     this.fetchDisplayRecords();
+
     Actions.getPlayer({ _id })
       .then(({ data }) => {
         this.fetchPicture(_id);
@@ -129,10 +130,12 @@ export default class App extends React.Component {
   };
 
   updateRecords = (records) => {
+    const { length } = records;
+
     this.setState({
       currentPlayerRecords: records,
-      worldRecord: records[0].performance,
-      lastRecord: records[records.length - 1].performance,
+      worldRecord: length ? records[0].performance : null,
+      lastRecord: length ? records[length - 1].performance : null,
     });
   };
 
@@ -365,6 +368,7 @@ export default class App extends React.Component {
     this.fetchPicture(player);
     this.setState({ alertSuccess: 'Bom jogo!', player, name });
     LocalStorage.setPlayer(player);
+    this.fetchDisplayRecords();
     this.closeDialogs();
   };
 

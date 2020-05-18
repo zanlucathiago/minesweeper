@@ -8,7 +8,8 @@ const config = {
     process.env.NODE_ENV === 'development'
       ? // ? 'http://localhost:5000/'
         // 'http://192.168.15.17:5000/'
-        'http://192.168.15.18:5000/'
+        // 'http://192.168.15.18:5000/'
+        'http://192.168.15.5:5000/'
       : // 'http://192.168.0.18:5000/'
         remoteBaseURL
   }api/`,
