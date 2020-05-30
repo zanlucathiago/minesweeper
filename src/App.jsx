@@ -21,12 +21,10 @@ import helper from './helper';
 import BoardGrid from './components/BoardGrid';
 import AboutDialog from './components/AboutDialog';
 import UserDialog from './components/UserDialog';
-import { GlobalProvider } from './context/GlobalState';
 import TimeField from './components/TimeField';
 import BombCounter from './components/BombCounter';
-import Socket from './services/Socket';
 
-export default class App extends React.Component {
+class App extends React.Component {
   constructor(props) {
     super(props);
     const size = LocalStorage.getLevel();
@@ -443,8 +441,7 @@ export default class App extends React.Component {
     } = this.state;
 
     return (
-      <GlobalProvider>
-        <Socket />
+      <div>
         {dialog === 'user' && (
           <UserDialog
             fileURL={fileURL}
@@ -636,7 +633,9 @@ export default class App extends React.Component {
             />
           )}
         </Container>
-      </GlobalProvider>
+      </div>
     );
   }
 }
+
+export default App;

@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
+import Socket from './services/Socket';
 
 // eslint-disable-next-line
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(<Socket />, document.getElementById('root'));
