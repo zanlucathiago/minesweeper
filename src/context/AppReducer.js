@@ -10,6 +10,16 @@ export default (state, action) => {
         ...state,
         currentBombsRemaining: state.currentBombsRemaining - 1,
       };
+    case 'IS_CONNECTED':
+      return {
+        ...state,
+        isConnected: true,
+      };
+    case 'IS_DISCONNECTED':
+      return {
+        ...state,
+        isConnected: false,
+      };
     default:
       return state;
   }

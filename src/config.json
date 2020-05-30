@@ -1,3 +1,4 @@
 {
-  "remoteBaseURL": "https://infinite-atoll-82278.herokuapp.com/"
+  "remoteBaseURL": "https://infinite-atoll-82278.herokuapp.com/",
+  "localBaseURL": "http://192.168.0.18:5000/"
 }

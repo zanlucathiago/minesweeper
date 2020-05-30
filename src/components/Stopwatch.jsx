@@ -1,9 +1,7 @@
 import { TextField } from '@material-ui/core';
 import moment from 'moment';
 import PropTypes from 'prop-types';
-// import React, { Component, useContext } from 'react';
 import React, { Component } from 'react';
-// import { GlobalContext } from '../context/GlobalState';
 
 class Stopwatch extends Component {
   counter = 0;
@@ -16,7 +14,6 @@ class Stopwatch extends Component {
     };
   }
 
-  // eslint-disable-next-line
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { running } = this.state;
     if (nextProps.running && !running) {
@@ -27,7 +24,7 @@ class Stopwatch extends Component {
   }
 
   displayTime = () => {
-    this.counter = this.counter + 1000;
+    this.counter += 1000;
     this.setState({
       time: this.formatTime(this.counter),
     });
@@ -54,7 +51,6 @@ class Stopwatch extends Component {
     clearInterval(this.runClock);
     const currPerformance = this.endTime - this.startTime;
     this.setState({ running: false, time: this.formatTime(currPerformance) });
-    // this.props.openFeedback(this.endTime - this.startTime);
     saveRecord(currPerformance);
   }
 
@@ -74,22 +70,14 @@ class Stopwatch extends Component {
   }
 }
 
-// function Stopwatch(props) {
-//   // const appContext = useContext(AppContext);
-//   const { currentBombsRemaining } = useContext(GlobalContext);
-//   return (
-//     <ComponentImpl currentBombsRemaining={currentBombsRemaining} {...props} />
-//   );
-// }
 Stopwatch.defaultProps = {
   running: false,
   saveRecord: () => {},
-  // value: 0,
 };
 
 Stopwatch.propTypes = {
   running: PropTypes.bool,
   saveRecord: PropTypes.func,
-  // value: PropTypes.number,
 };
+
 export default Stopwatch;

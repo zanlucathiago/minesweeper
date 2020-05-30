@@ -1,17 +1,10 @@
 import axios from 'axios';
-import { remoteBaseURL } from './config.json';
+import { localBaseURL, remoteBaseURL } from './config.json';
 import LocalStorage from './LocalStorage';
 
 const config = {
   baseURL: `${
-    // process.env.NODE_ENV === 'development' ? localBaseURL : remoteBaseURL
-    process.env.NODE_ENV === 'development'
-      ? // ? 'http://localhost:5000/'
-        // 'http://192.168.15.17:5000/'
-        // 'http://192.168.15.18:5000/'
-        'http://192.168.15.5:5000/'
-      : // 'http://192.168.0.18:5000/'
-        remoteBaseURL
+    process.env.NODE_ENV === 'development' ? localBaseURL : remoteBaseURL
   }api/`,
   headers: {
     'Content-Type': 'application/json',
@@ -30,18 +23,14 @@ class Actions {
   getPlayer = async (player) =>
     axios.get(`/player?${new URLSearchParams(player).toString()}`, config);
 
-  // getRecords = async (filter = []) =>
   getRecords = async () =>
     axios.get(
       `/record?${[
-        // ...filter.map((item) => `${item}=true`),
         `_id=${LocalStorage.getPlayer()}`,
         `level=${LocalStorage.getLevel()}`,
       ].join('&')}`,
       config,
     );
-
-  // displayRecords = async (context, player)
 
   addRecord = async (data) => axios.post('/record', data, config);
 

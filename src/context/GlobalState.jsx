@@ -9,6 +9,7 @@ const { bombs } = Board[LocalStorage.getLevel()];
 const initialState = {
   defaultBombsRemaining: bombs,
   currentBombsRemaining: bombs,
+  isConnected: false,
 };
 
 // Create context
@@ -22,14 +23,24 @@ export const GlobalProvider = ({ children }) => {
   function removeFlag() {
     dispatch({
       type: 'REMOVE_FLAG',
-      // payload: id,
     });
   }
 
   function addFlag() {
     dispatch({
       type: 'ADD_FLAG',
-      // payload: transaction,
+    });
+  }
+
+  function setConnected() {
+    dispatch({
+      type: 'IS_CONNECTED',
+    });
+  }
+
+  function setDisconnected() {
+    dispatch({
+      type: 'IS_DISCONNECTED',
     });
   }
 
@@ -39,6 +50,8 @@ export const GlobalProvider = ({ children }) => {
         ...state,
         removeFlag,
         addFlag,
+        setConnected,
+        setDisconnected,
       }}
     >
       {children}

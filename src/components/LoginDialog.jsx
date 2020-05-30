@@ -146,6 +146,7 @@ class LoginDialog extends Component {
       player,
     } = this.state;
     const { handleClose } = this.props;
+
     return (
       <div>
         {loading && <Progress />}

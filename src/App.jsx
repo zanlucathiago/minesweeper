@@ -24,6 +24,7 @@ import UserDialog from './components/UserDialog';
 import { GlobalProvider } from './context/GlobalState';
 import TimeField from './components/TimeField';
 import BombCounter from './components/BombCounter';
+import Socket from './services/Socket';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -50,7 +51,6 @@ export default class App extends React.Component {
   }
 
   componentDidMount() {
-    // eslint-disable-next-line
     const _id = LocalStorage.getPlayer();
     this.fetchDisplayRecords();
 
@@ -392,14 +392,6 @@ export default class App extends React.Component {
         loading: true,
         performance,
         rating: length - (idx === -1 ? length : idx),
-        // rating: [
-        //   length -
-        //     _.findIndex(
-        //       currentPlayerRecords,
-        //       (o) => o.performance >= performance,
-        //     ),
-        //   length,
-        // ],
         worldRecord: Math.min(worldRecord, performance),
         lastRecord: performance,
       });
@@ -452,6 +444,7 @@ export default class App extends React.Component {
 
     return (
       <GlobalProvider>
+        <Socket />
         {dialog === 'user' && (
           <UserDialog
             fileURL={fileURL}
@@ -550,14 +543,7 @@ export default class App extends React.Component {
               xs={6}
               md={3}
             >
-              <TimeField
-                // format="mm:ss:SSS"
-                // context="date"
-                key={key}
-                label="Melhor tempo"
-                value={worldRecord}
-                // value={worldRecord / 1000}
-              />
+              <TimeField key={key} label="Melhor tempo" value={worldRecord} />
             </Grid>
             <Grid
               item
@@ -565,13 +551,7 @@ export default class App extends React.Component {
               xs={6}
               md={3}
             >
-              <TimeField
-                // context="performance"
-                // format="mm:ss:SSS"
-                key={key}
-                label="Último tempo"
-                value={lastRecord}
-              />
+              <TimeField key={key} label="Último tempo" value={lastRecord} />
             </Grid>
             <Grid
               item
@@ -589,16 +569,6 @@ export default class App extends React.Component {
             >
               <Stopwatch saveRecord={this.saveRecord} running={running} />
             </Grid>
-            {/* <Grid item style={{ margin: 'auto', textAlign: 'center' }} xs={6}>
-              <Button
-                onClick={this.onClickPlay}
-                variant="contained"
-                color="primary"
-                endIcon={running ? <FaStop /> : <FaPlay />}
-              >
-                {running ? 'Parar' : 'Iniciar'}
-              </Button>
-            </Grid> */}
           </Grid>
           <Grid
             item
@@ -649,7 +619,6 @@ export default class App extends React.Component {
             <Fab
               color="secondary"
               style={{ position: 'fixed', right: '2rem', bottom: '2rem' }}
-              // disabled={!running || thinking}
               onClick={this.onClickPlay}
             >
               <FaPlay size={23} />

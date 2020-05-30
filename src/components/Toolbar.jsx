@@ -13,17 +13,17 @@ import {
   MenuItem,
   Avatar,
 } from '@material-ui/core';
+
 import ChartIcon from '@material-ui/icons/BarChart';
 import ListIcon from '@material-ui/icons/FormatListNumbered';
 import MailIcon from '@material-ui/icons/Mail';
 import MenuIcon from '@material-ui/icons/Menu';
 import InfoIcon from '@material-ui/icons/Info';
-// import LibraryBooks from '@material-ui/icons/LibraryBooks';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-// import Actions from '../Actions';
 import Board from '../Board.json';
 import LocalStorage from '../LocalStorage';
+import ConnectedDisplay from './ConnectedDisplay';
 
 class Toolbar extends Component {
   menuId = 'primary-search-account-menu';
@@ -50,16 +50,12 @@ class Toolbar extends Component {
 
   handleMenuClose = () => {
     this.setState({ anchorEl: null });
-    // this.handleMobileMenuClose();
   };
-
-  // handleMobileMenuClose = () => {
-  //   this.setState({ mobileMoreAnchorEl: null });
-  // };
 
   renderMenu = () => {
     const { anchorEl } = this.state;
     const { name } = this.props;
+
     return (
       <Menu
         anchorEl={anchorEl}
@@ -71,8 +67,6 @@ class Toolbar extends Component {
         open={Boolean(anchorEl)}
         onClose={this.handleMenuClose}
       >
-        {/* <MenuItem onClick={this.handleMenuClose}>Profile</MenuItem> */}
-        {/* <MenuItem onClick={this.openUser}>{name}</MenuItem> */}
         <MenuItem onClick={this.openUser}>{name}</MenuItem>
         <Divider />
         <MenuItem onClick={this.handleLogout}>Sair</MenuItem>
@@ -95,6 +89,7 @@ class Toolbar extends Component {
 
   render() {
     const { drawerOpen } = this.state;
+
     const {
       fileURL,
       openFeedback,
@@ -102,21 +97,15 @@ class Toolbar extends Component {
       openSettings,
       openAbout,
     } = this.props;
+
     return (
       <AppBar position="static">
         <SwipeableDrawer
           open={drawerOpen}
-          // onClose={() => {}}
           onOpen={() => {}}
           onClose={this.closeDrawer}
         >
-          <div
-            // className={classes.list}
-            role="presentation"
-            style={{ width: 199 }}
-            // onClick={toggleDrawer(side, false)}
-            // onKeyDown={toggleDrawer(side, false)}
-          >
+          <div role="presentation" style={{ width: 199 }}>
             <List>
               {[
                 {
@@ -141,11 +130,6 @@ class Toolbar extends Component {
               {[
                 { label: 'Contato', icon: <MailIcon />, onClick: openForm },
                 { label: 'Sobre', icon: <InfoIcon />, onClick: openAbout },
-                // {
-                //   label: 'Como jogar?',
-                //   icon: <LibraryBooks />,
-                //   onClick: openDocs,
-                // },
               ].map((text) => (
                 <ListItem
                   button
@@ -160,54 +144,24 @@ class Toolbar extends Component {
           </div>
         </SwipeableDrawer>
         <MaterialToolbar>
-          <IconButton
-            edge="start"
-            // className={classes.menuButton}
-            color="inherit"
-            // aria-label="menu"
-            onClick={this.openDrawer}
-          >
+          <IconButton edge="start" color="inherit" onClick={this.openDrawer}>
             <MenuIcon />
           </IconButton>
-          <Typography style={{ flexGrow: 1 }} variant="h6">
-            {/* {name} */}
+          {/* <Typography style={{ flexGrow: 1 }} variant="h6"> */}
+          <Typography variant="h6">
             Nível {Board[LocalStorage.getLevel()].name}
           </Typography>
-          {/* {auth && ( */}
-          <div>
+          <ConnectedDisplay />
+          <div style={{ position: 'absolute', right: 0 }}>
             <IconButton
-              // aria-label="account of current user"
-              // aria-controls="menu-appbar"
-              // aria-haspopup="true"
-              // onClick={handleMenu}
               aria-controls={this.menuId}
               aria-haspopup="true"
               onClick={this.handleProfileMenuOpen}
               color="inherit"
             >
               <Avatar src={fileURL} />
-              {/* <AccountCircle /> */}
             </IconButton>
-            {/* <Menu
-              id="menu-appbar"
-              // anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              // open={open}
-              // onClose={handleClose}
-            >
-              <MenuItem>Profile</MenuItem>
-              <MenuItem>My account</MenuItem>
-            </Menu> */}
           </div>
-          {/* )} */}
         </MaterialToolbar>
         {this.renderMenu()}
       </AppBar>
@@ -218,15 +172,12 @@ class Toolbar extends Component {
 Toolbar.defaultProps = {
   fileURL: '',
   name: '',
-  // _id: '',
 };
 
 Toolbar.propTypes = {
   fileURL: PropTypes.string,
   logout: PropTypes.func.isRequired,
   name: PropTypes.string,
-  // _id: PropTypes.string,
-  // openDocs: PropTypes.func.isRequired,
   openAbout: PropTypes.func.isRequired,
   openFeedback: PropTypes.func.isRequired,
   openForm: PropTypes.func.isRequired,

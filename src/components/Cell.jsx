@@ -17,7 +17,6 @@ class ComponentImpl extends Component {
     };
   }
 
-  // eslint-disable-next-line
   UNSAFE_componentWillReceiveProps(nextProps) {
     if (!this.open && nextProps.cell.open) {
       this.recursiveOpener();
@@ -26,7 +25,6 @@ class ComponentImpl extends Component {
 
   setBackgroundColor = () => {
     const { cell } = this.props;
-    // const { guessBomb, noBomb, open } = cell;
 
     if (!cell.open) {
       if (cell.noBomb) {
@@ -172,16 +170,15 @@ class ComponentImpl extends Component {
 }
 
 function Cell(props) {
-  // const appContext = useContext(AppContext);
   const { removeFlag, addFlag } = useContext(GlobalContext);
   return <ComponentImpl removeFlag={removeFlag} addFlag={addFlag} {...props} />;
 }
+
 ComponentImpl.defaultProps = {
   guessBomb: null,
 };
 
 ComponentImpl.propTypes = {
-  // backgroundColor: PropTypes.string.isRequired,
   cell: PropTypes.exact({
     flag: PropTypes.bool,
     guessBomb: PropTypes.number,
@@ -190,14 +187,13 @@ ComponentImpl.propTypes = {
     bomb: PropTypes.bool,
     number: PropTypes.number,
   }).isRequired,
-  // changeVictory: PropTypes.func.isRequired,
   guessBomb: PropTypes.number,
   loseGame: PropTypes.func.isRequired,
   openAround: PropTypes.func.isRequired,
   refreshBoard: PropTypes.func.isRequired,
-  // openingPostScripts: PropTypes.func.isRequired,
   running: PropTypes.bool.isRequired,
   updateWilds: PropTypes.func.isRequired,
   winGame: PropTypes.func.isRequired,
 };
+
 export default Cell;
