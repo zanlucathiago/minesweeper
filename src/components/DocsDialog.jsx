@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
+
 import {
   Dialog,
   DialogTitle,
   DialogContent,
-  // DialogContentText,
   DialogActions,
   Button,
   Typography,
@@ -11,6 +11,7 @@ import {
   ExpansionPanelSummary,
   ExpansionPanel,
 } from '@material-ui/core';
+
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import PropTypes from 'prop-types';
 
@@ -18,14 +19,12 @@ class DocsDialog extends Component {
   render() {
     const { handleClose } = this.props;
     const { expanded } = this.state;
+
     return (
       <Dialog open onClose={handleClose} scroll="paper">
         <DialogTitle id="scroll-dialog-title">Como Jogar</DialogTitle>
         <DialogContent dividers>
-          <ExpansionPanel
-            expanded={expanded === 'panel1'}
-            // onChange={handleChange('panel1')}
-          >
+          <ExpansionPanel expanded={expanded === 'panel1'}>
             <ExpansionPanelSummary
               expandIcon={<ExpandMoreIcon />}
               aria-controls="panel1bh-content"
@@ -41,10 +40,7 @@ class DocsDialog extends Component {
               </Typography>
             </ExpansionPanelDetails>
           </ExpansionPanel>
-          <ExpansionPanel
-            expanded={expanded === 'panel2'}
-            // onChange={handleChange('panel2')}
-          >
+          <ExpansionPanel expanded={expanded === 'panel2'}>
             <ExpansionPanelSummary
               expandIcon={<ExpandMoreIcon />}
               aria-controls="panel2bh-content"
@@ -61,10 +57,7 @@ class DocsDialog extends Component {
               </Typography>
             </ExpansionPanelDetails>
           </ExpansionPanel>
-          <ExpansionPanel
-            expanded={expanded === 'panel3'}
-            // onChange={handleChange('panel3')}
-          >
+          <ExpansionPanel expanded={expanded === 'panel3'}>
             <ExpansionPanelSummary
               expandIcon={<ExpandMoreIcon />}
               aria-controls="panel3bh-content"
@@ -83,15 +76,8 @@ class DocsDialog extends Component {
               </Typography>
             </ExpansionPanelDetails>
           </ExpansionPanel>
-          <ExpansionPanel
-            expanded={expanded === 'panel4'}
-            // onChange={handleChange('panel4')}
-          >
-            <ExpansionPanelSummary
-              expandIcon={<ExpandMoreIcon />}
-              // aria-controls="panel4bh-content"
-              // id="panel4bh-header"
-            >
+          <ExpansionPanel expanded={expanded === 'panel4'}>
+            <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Personal data</Typography>
             </ExpansionPanelSummary>
             <ExpansionPanelDetails>
@@ -102,15 +88,8 @@ class DocsDialog extends Component {
               </Typography>
             </ExpansionPanelDetails>
           </ExpansionPanel>
-          {/* <DialogContentText tabIndex={-1}>
-        Mecânica do Campo Minado
-
-      </DialogContentText> */}
         </DialogContent>
         <DialogActions>
-          {/* <Button onClick={handleClose} color="primary">
-        Cancel
-      </Button> */}
           <Button variant="contained" onClick={handleClose} color="primary">
             Fechar
           </Button>

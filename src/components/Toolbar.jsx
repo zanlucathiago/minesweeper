@@ -147,7 +147,6 @@ class Toolbar extends Component {
           <IconButton edge="start" color="inherit" onClick={this.openDrawer}>
             <MenuIcon />
           </IconButton>
-          {/* <Typography style={{ flexGrow: 1 }} variant="h6"> */}
           <Typography variant="h6">
             Nível {Board[LocalStorage.getLevel()].name}
           </Typography>

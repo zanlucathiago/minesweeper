@@ -7,7 +7,6 @@ import { IoMdHelp } from 'react-icons/io';
 import Actions from './Actions';
 import './App.css';
 import Board from './Board.json';
-import Alert from './components/Alert';
 import FeedbackDialog from './components/FeedbackDialog';
 import FormDialog from './components/FormDialog';
 import LoginDialog from './components/LoginDialog';
@@ -31,9 +30,6 @@ class App extends React.Component {
     this.updateDimensions(size);
 
     this.state = {
-      alert: '',
-      alertInfo: '',
-      alertSuccess: '',
       dialog: null,
       grid: this.generateGrid(),
       key: false,
@@ -138,10 +134,13 @@ class App extends React.Component {
   };
 
   setChanges = (size) => {
+    const { updateFlags } = this.props;
     const { key } = this.state;
     this.updateDimensions(size);
     LocalStorage.setLevel(size);
+    updateFlags();
     this.fetchDisplayRecords();
+
     this.setState({
       grid: this.generateGrid(),
       key: !key,
@@ -151,10 +150,12 @@ class App extends React.Component {
   };
 
   calculate = () => {
+    const { alertError, alertInfo } = this.props;
     helper.setIterations(0);
     const { grid } = this.state;
     helper.setTotalGuesses(0);
     helper.setTotalWild(0);
+
     const currGrid = Array(helper.getRows())
       .fill()
       .map((row, rowId) =>
@@ -169,9 +170,11 @@ class App extends React.Component {
             return -1;
           }),
       );
+
     for (let i = 0; i < helper.getRows(); i += 1) {
       for (let j = 0; j < helper.getColumns(); j += 1) {
         const currCell = grid[i][j];
+
         if (currCell.open && currCell.number) {
           if (
             helper.iterateAround(i, j, (x, y) => (grid[x][y].open ? 0 : 1)) ===
@@ -195,6 +198,7 @@ class App extends React.Component {
           if (!o.guessBomb) {
             grid[rowId][colId].noBomb = true;
           }
+
           return o;
         });
 
@@ -208,20 +212,23 @@ class App extends React.Component {
         ),
       );
 
-      this.setState({
-        alertInfo: helper.getMin().guessBomb
+      alertInfo(
+        helper.getMin().guessBomb
           ? `${Math.round(
               (100 * helper.getMin().guessBomb) / helper.getTotalGuesses(),
             )}% de chance de ter mina na região destacada em verde.`
           : `A região destacada em azul não tem minas!`,
+        { vertical: 'top' },
+      );
+
+      this.setState({
         grid,
       });
     } else {
       helper.setError(false);
-      this.setState({
-        alert: 'Não foi possivel requerer ajuda, tente novamente mais tarde',
-      });
+      alertError('Não foi possivel requerer ajuda, tente novamente mais tarde');
     }
+
     this.setState({ thinking: false });
   };
 
@@ -238,6 +245,7 @@ class App extends React.Component {
 
       if (!currCol && currRow === helper.getRows()) {
         const wildBombs = helper.getBombs() - currBombs;
+
         if (wildBombs <= helper.getTotalWild()) {
           const wildCombinations = this.combinations(
             helper.getTotalWild(),
@@ -255,6 +263,7 @@ class App extends React.Component {
                 }
               }),
             );
+
             helper.incrementTotalGuesses(wildCombinations);
           } else {
             helper.setError(true);
@@ -263,16 +272,20 @@ class App extends React.Component {
       } else {
         let nextGrid = JSON.parse(JSON.stringify(currGrid));
         nextGrid[currRow][currCol] = 0;
+
         if (
           currGrid[currRow][currCol] !== 1 &&
           !this.checkAround(currRow, currCol, nextGrid)
         ) {
           this.checkValuesForNextCell(currBombs, nextRow, nextCol, nextGrid);
         }
+
         const currCel = grid[currRow][currCol];
+
         if (!currCel.open && currBombs < helper.getBombs() && !currCel.isWild) {
           nextGrid = JSON.parse(JSON.stringify(currGrid));
           nextGrid[currRow][currCol] = 1;
+
           if (
             currGrid[currRow][currCol] === 1 ||
             !this.checkAround(currRow, currCol, nextGrid)
@@ -291,6 +304,7 @@ class App extends React.Component {
 
   checkAround = (row, col, currGrid) => {
     const { grid } = this.state;
+
     return helper.iterateAround(row, col, (x, y) => {
       if (grid[x][y].open && grid[x][y].number) {
         if (
@@ -333,14 +347,17 @@ class App extends React.Component {
       prd *= i;
       i += 1;
     }
+
     return prd;
   };
 
   combinations = (n, r) => {
     const diff = n - r;
+
     if (!diff) {
       return 1;
     }
+
     const major = Math.max(diff, r);
     return this.productRange(major + 1, n) / this.productRange(1, n - major);
   };
@@ -349,6 +366,7 @@ class App extends React.Component {
     const { grid, key } = this.state;
     helper.setSquaresOpened(0);
     helper.setTotalGuesses(0);
+
     this.setState(({ running }) => ({
       grid: running ? grid : this.generateGrid(),
       key: running ? key : !key,
@@ -363,14 +381,17 @@ class App extends React.Component {
     );
 
   startGame = (player, name) => {
+    const { alertSuccess } = this.props;
     this.fetchPicture(player);
-    this.setState({ alertSuccess: 'Bom jogo!', player, name });
+    alertSuccess('Bom jogo!');
+    this.setState({ player, name });
     LocalStorage.setPlayer(player);
     this.fetchDisplayRecords();
     this.closeDialogs();
   };
 
   saveRecord = (performance) => {
+    const { alertError } = this.props;
     const { currentPlayerRecords, player, victory, worldRecord } = this.state;
 
     if (victory) {
@@ -381,6 +402,7 @@ class App extends React.Component {
       }).then(() => this.setState({ dialog: 'feedback', loading: false }));
 
       const { length } = currentPlayerRecords;
+
       const idx = _.findIndex(
         currentPlayerRecords,
         (o) => o.performance >= performance,
@@ -394,7 +416,7 @@ class App extends React.Component {
         lastRecord: performance,
       });
     } else {
-      this.setState({ alert: 'Jogo encerrado.' });
+      alertError('Jogo encerrado.');
     }
   };
 
@@ -411,18 +433,19 @@ class App extends React.Component {
   };
 
   confirmSavedUser = (fileURL) => {
+    const { alertSuccess } = this.props;
+    alertSuccess('Alterações gravadas');
+
     this.setState({
-      alertSuccess: 'Alterações gravadas',
       dialog: null,
       fileURL,
     });
   };
 
   render() {
+    const { alertError, alertInfo, alertSuccess, alertWarning } = this.props;
+
     const {
-      alert,
-      alertInfo,
-      alertSuccess,
       dialog,
       fileURL,
       grid,
@@ -444,6 +467,7 @@ class App extends React.Component {
       <div>
         {dialog === 'user' && (
           <UserDialog
+            alertError={alertError}
             fileURL={fileURL}
             handleClose={this.closeDialogs}
             handleSave={this.confirmSavedUser}
@@ -453,10 +477,12 @@ class App extends React.Component {
         )}
         {dialog === 'form' && (
           <FormDialog
+            alertError={alertError}
             handleClose={(msg) => {
               if (msg) {
-                this.setState({ alertSuccess: msg });
+                alertSuccess(msg);
               }
+
               this.closeDialogs();
             }}
           />
@@ -475,41 +501,18 @@ class App extends React.Component {
           openUser={this.openUser}
         />
         <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
-          {alert && (
-            <Alert
-              onClose={() => {
-                this.setState({ alert: null });
-              }}
-              severity="error"
-            >
-              {alert}
-            </Alert>
-          )}
-          {alertSuccess && (
-            <Alert
-              onClose={() => {
-                this.setState({ alertSuccess: null });
-              }}
-              severity="success"
-            >
-              {alertSuccess}
-            </Alert>
-          )}
-          {alertInfo && (
-            <Alert
-              onClose={() => {
-                this.setState({ alertInfo: null });
-              }}
-              severity="info"
-              vertical="top"
-            >
-              {alertInfo}
-            </Alert>
-          )}
           {loading && <Progress />}
-          {dialog === 'login' && <LoginDialog onStart={this.startGame} />}
+          {dialog === 'login' && (
+            <LoginDialog
+              alertError={alertError}
+              alertWarning={alertWarning}
+              onStart={this.startGame}
+            />
+          )}
           {dialog === 'feedback' && (
             <FeedbackDialog
+              alertError={alertError}
+              alertInfo={alertInfo}
               handleClose={this.closeDialogs}
               content={
                 victory &&
@@ -540,7 +543,7 @@ class App extends React.Component {
               xs={6}
               md={3}
             >
-              <TimeField key={key} label="Melhor tempo" value={worldRecord} />
+              <TimeField key={key} label="Menor tempo" value={worldRecord} />
             </Grid>
             <Grid
               item

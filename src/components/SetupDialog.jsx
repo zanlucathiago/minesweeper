@@ -10,6 +10,7 @@ import {
   Radio,
   RadioGroup,
 } from '@material-ui/core';
+
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import Board from '../Board.json';
@@ -17,6 +18,7 @@ import Board from '../Board.json';
 class SetupDialog extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
       size: props.size,
     };
@@ -30,6 +32,7 @@ class SetupDialog extends Component {
   render() {
     const { size } = this.state;
     const { setChanges } = this.props;
+
     return (
       <Dialog open onClose={this.handleClose}>
         <DialogTitle id="form-dialog-title">Configurações</DialogTitle>
@@ -48,13 +51,6 @@ class SetupDialog extends Component {
                   label={value.name}
                 />
               ))}
-              {/* <FormControlLabel value="sm" control={<Radio />} label="Fácil" />
-              <FormControlLabel value="md" control={<Radio />} label="Médio" />
-              <FormControlLabel
-                value="lg"
-                control={<Radio />}
-                label="Difícil"
-              /> */}
             </RadioGroup>
           </FormControl>
         </DialogContent>

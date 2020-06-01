@@ -1,11 +1,9 @@
-// import React, { useState } from 'react';
 import React from 'react';
 import { TextField } from '@material-ui/core';
 import moment from 'moment';
 import PropTypes from 'prop-types';
 
 function TimeField({ label, value }) {
-  // const [time, setTime] = useState('--:--:---');
   return (
     <TextField
       inputProps={{ min: 0, style: { textAlign: 'center' } }}
@@ -13,7 +11,6 @@ function TimeField({ label, value }) {
       label={label}
       size="small"
       style={{ width: 100 }}
-      // value="123"
       value={
         value
           ? moment()

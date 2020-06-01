@@ -7,11 +7,11 @@ import {
   DialogTitle,
   TextField,
 } from '@material-ui/core';
+
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import Actions from '../Actions';
 import Progress from './Progress';
-import Alert from './Alert';
 
 const numbers = Array(10)
   .fill('')
@@ -20,6 +20,7 @@ const numbers = Array(10)
 class FormDialog extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
       email: '',
       message: '',
@@ -63,12 +64,15 @@ class FormDialog extends Component {
   changeMessage = ({ target }) => this.setState({ message: target.value });
 
   sendMail = () => {
+    const { alertError } = this.props;
     const { name, email, phone, message } = this.state;
     this.setState({ loading: true });
+
     Actions.sendMail({ name, email, phone, message })
       .then(this.finish)
       .catch((error) => {
-        this.setState({ alert: error.message, loading: false });
+        alertError(error.message);
+        this.setState({ loading: false });
       });
   };
 
@@ -78,19 +82,10 @@ class FormDialog extends Component {
   };
 
   render() {
-    const { alert, loading, name, message, email, phone } = this.state;
+    const { loading, name, message, email, phone } = this.state;
+
     return (
       <Dialog open onClose={this.handleClose}>
-        {alert && (
-          <Alert
-            onClose={() => {
-              this.setState({ alert: null });
-            }}
-            severity="error"
-          >
-            {alert}
-          </Alert>
-        )}
         {loading && <Progress />}
         <DialogTitle>Mensagem</DialogTitle>
         <DialogContent>

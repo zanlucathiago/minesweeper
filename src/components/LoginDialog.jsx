@@ -6,19 +6,19 @@ import {
   DialogTitle,
   TextField,
 } from '@material-ui/core';
+
 import _ from 'lodash';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import Actions from '../Actions';
-import Alert from './Alert';
 import DialPad from './DialPad';
 import Progress from './Progress';
 
 class LoginDialog extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
-      alert: null,
       checkPIN: false,
       createPIN: false,
       loading: false,
@@ -36,24 +36,31 @@ class LoginDialog extends Component {
   }
 
   addPlayer = () => {
+    const { alertError, alertWarning } = this.props;
     const { player } = this.state;
+
     if (player) {
       Actions.getPlayer({ slug: _.kebabCase(player) })
-        .then(() =>
+        .then(() => {
+          alertError('Já existe um usuario com este nome!');
+
           this.setState({
-            alert: 'Já existe um usuario com este nome!',
             loading: false,
-          }),
-        )
-        .catch(({ response }) =>
-          response.status === 404
-            ? this.setState({ createPIN: true, loading: false })
-            : this.setState({ alert: response.data, loading: false }),
-        );
+          });
+        })
+        .catch(({ response }) => {
+          if (response.status === 404) {
+            this.setState({ createPIN: true, loading: false });
+          } else {
+            alertError(response.data);
+            this.setState({ loading: false });
+          }
+        });
       this.setState({ loading: true });
     } else {
-      this.setState({ alert: 'Insira um nome!' });
+      alertWarning('Insira um nome!');
     }
+
     this.setState({ creating: true });
   };
 
@@ -62,7 +69,9 @@ class LoginDialog extends Component {
   };
 
   getPlayer = () => {
+    const { alertError, alertWarning } = this.props;
     const { player } = this.state;
+
     if (player) {
       Actions.getPlayer({ slug: _.kebabCase(player) })
         .then(({ data }) => {
@@ -71,21 +80,21 @@ class LoginDialog extends Component {
             PIN: data.pin.split('').map((item) => parseInt(item, 10)),
             loading: false,
             checkPIN: true,
-            // eslint-disable-next-line
             _id: data._id,
           });
         })
-        .catch(({ response }) =>
+        .catch(({ response }) => {
+          alertError(
+            response ? response.data : 'Estamos com problemas no servidor',
+          );
+
           this.setState({
-            alert: response
-              ? response.data
-              : 'Estamos com problemas no servidor',
             loading: false,
-          }),
-        );
+          });
+        });
       this.setState({ loading: true });
     } else {
-      this.setState({ alert: 'Insira um nome!' });
+      alertWarning('Insira um nome!');
     }
   };
 
@@ -95,71 +104,55 @@ class LoginDialog extends Component {
     }
   };
 
-  closeAlert = () => {
-    this.setState({ alert: null, alertSuccess: null });
-  };
-
   checkPIN = (value) => {
+    const { alertError, alertSuccess, alertWarning } = this.props;
     const { _id, creating, name, player, PIN } = this.state;
+
     if (creating) {
       if (value.every((item, index) => item === PIN[index])) {
         Actions.addPlayer({
           name: player,
           pin: PIN.join(''),
         })
-          .then(() =>
+          .then(() => {
+            alertSuccess('Jogador criado! Entre para jogar.');
+
             this.setState({
               loading: false,
-              alertSuccess: 'Jogador criado! Entre para jogar.',
               checkPIN: false,
-            }),
-          )
-          .catch(({ response }) =>
+            });
+          })
+          .catch(({ response }) => {
+            alertError(
+              response ? response.data : 'Estamos com problemas no servidor.',
+            );
+
             this.setState({
               loading: false,
-              alert: response
-                ? response.data
-                : 'Estamos com problemas no servidor.',
               checkPIN: false,
-            }),
-          );
+            });
+          });
         this.setState({ loading: true });
       } else {
-        this.setState({ alert: 'As chaves não coincidem!', checkPIN: false });
+        alertWarning('As chaves não coincidem!');
+        this.setState({ checkPIN: false });
       }
     } else if (value.every((item, index) => item === PIN[index])) {
       const { onStart } = this.props;
       onStart(_id, name);
     } else {
-      this.setState({ alert: 'Chave inválida!', checkPIN: false });
+      alertWarning('Chave inválida!');
+      this.setState({ checkPIN: false });
     }
   };
 
   render() {
-    const {
-      alert,
-      alertSuccess,
-      checkPIN,
-      createPIN,
-      creating,
-      loading,
-      player,
-    } = this.state;
+    const { checkPIN, createPIN, creating, loading, player } = this.state;
     const { handleClose } = this.props;
 
     return (
       <div>
         {loading && <Progress />}
-        {alert && (
-          <Alert onClose={this.closeAlert} severity="error">
-            {alert}
-          </Alert>
-        )}
-        {alertSuccess && (
-          <Alert onClose={this.closeAlert} severity="success">
-            {alertSuccess}
-          </Alert>
-        )}
         {createPIN && (
           <DialPad
             onClose={() => this.setState({ createPIN: false })}

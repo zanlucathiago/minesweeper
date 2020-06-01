@@ -1,25 +1,33 @@
-/**
- * Socket
- */
 import io from 'socket.io-client';
 import feathers from '@feathersjs/client';
 import React, { useContext } from 'react';
 import { localBaseURL, remoteBaseURL } from '../config.json';
 import { GlobalContext, GlobalProvider } from '../context/GlobalState';
-import App from '../App';
+import AlertContainer from './AlertContainer';
 
 function Listeners({ socket }) {
-  const context = useContext(GlobalContext);
+  const {
+    alertError,
+    alertSuccess,
+    isConnected,
+    setConnected,
+    setDisconnected,
+  } = useContext(GlobalContext);
 
   socket.on('connect', function() {
-    context.setConnected();
+    if (isConnected === false) {
+      alertSuccess('Conectado.');
+    }
+
+    setConnected();
   });
 
   socket.on('disconnect', function() {
-    context.setDisconnected();
+    alertError('Desconectado do servidor.');
+    setDisconnected();
   });
 
-  return <App />;
+  return <AlertContainer />;
 }
 
 function Socket() {

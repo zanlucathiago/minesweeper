@@ -3,13 +3,17 @@ import AppReducer from './AppReducer';
 import LocalStorage from '../LocalStorage';
 import Board from '../Board.json';
 
-const { bombs } = Board[LocalStorage.getLevel()];
+const getUpdatedBombs = () => {
+  const { bombs } = Board[LocalStorage.getLevel()];
+  return bombs;
+};
 
 // Initial state
 const initialState = {
-  defaultBombsRemaining: bombs,
-  currentBombsRemaining: bombs,
-  isConnected: false,
+  alert: null,
+  defaultBombsRemaining: getUpdatedBombs(),
+  currentBombsRemaining: getUpdatedBombs(),
+  isConnected: null,
 };
 
 // Create context
@@ -32,6 +36,13 @@ export const GlobalProvider = ({ children }) => {
     });
   }
 
+  function updateFlags() {
+    dispatch({
+      payload: getUpdatedBombs(),
+      type: 'UPDATE_FLAGS',
+    });
+  }
+
   function setConnected() {
     dispatch({
       type: 'IS_CONNECTED',
@@ -44,14 +55,54 @@ export const GlobalProvider = ({ children }) => {
     });
   }
 
+  function alertError(msg, options) {
+    dispatch({
+      payload: { ...options, children: msg, severity: 'error' },
+      type: 'ALERT_SHOW',
+    });
+  }
+
+  function alertInfo(msg, options) {
+    dispatch({
+      payload: { ...options, children: msg, severity: 'info' },
+      type: 'ALERT_SHOW',
+    });
+  }
+
+  function alertWarning(msg, options) {
+    dispatch({
+      payload: { ...options, children: msg, severity: 'warning' },
+      type: 'ALERT_SHOW',
+    });
+  }
+
+  function alertSuccess(msg, options) {
+    dispatch({
+      payload: { ...options, children: msg, severity: 'success' },
+      type: 'ALERT_SHOW',
+    });
+  }
+
+  function hideAlert() {
+    dispatch({
+      type: 'ALERT_HIDE',
+    });
+  }
+
   return (
     <GlobalContext.Provider
       value={{
         ...state,
+        alertError,
+        alertInfo,
+        alertSuccess,
+        alertWarning,
+        hideAlert,
         removeFlag,
         addFlag,
         setConnected,
         setDisconnected,
+        updateFlags,
       }}
     >
       {children}

@@ -20,6 +20,21 @@ export default (state, action) => {
         ...state,
         isConnected: false,
       };
+    case 'ALERT_SHOW':
+      return {
+        ...state,
+        alert: action.payload,
+      };
+    case 'ALERT_HIDE':
+      return {
+        ...state,
+        alert: null,
+      };
+    case 'UPDATE_FLAGS':
+      return {
+        ...state,
+        currentBombsRemaining: action.payload,
+      };
     default:
       return state;
   }

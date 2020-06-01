@@ -1,21 +1,17 @@
 import imageCompression from 'browser-image-compression';
 import React from 'react';
+
 import {
-  // Slide,
   Dialog,
   DialogContent,
   DialogActions,
   Button,
   Avatar,
 } from '@material-ui/core';
+
 import PropTypes from 'prop-types';
 import Actions from '../Actions';
-import Alert from './Alert';
 import Progress from './Progress';
-
-// const Transition = React.forwardRef(function Transition(props, ref) {
-//   return <Slide direction="up" ref={ref} {...props} />;
-// });
 
 class UserDialog extends React.Component {
   constructor(props) {
@@ -39,21 +35,23 @@ class UserDialog extends React.Component {
 
   handleSave = () => {
     const { file, urlFile } = this.state;
-    const { handleSave } = this.props;
+    const { alertError, handleSave } = this.props;
     const { _id } = this.props;
     this.setState({ loading: true });
-
     const data = new FormData();
     data.append('file', file);
-    // data.append('file', file);
+
     Actions.updatePlayer(data, _id)
       .then(() => handleSave(urlFile))
-      .catch(({ response }) =>
+      .catch(({ response }) => {
+        alertError(
+          response ? response.data : 'Estamos com problemas no servidor',
+        );
+
         this.setState({
           loading: false,
-          alert: response ? response.data : 'Estamos com problemas no servidor',
-        }),
-      );
+        });
+      });
   };
 
   changeImage = async ({ target }) => {
@@ -65,9 +63,7 @@ class UserDialog extends React.Component {
   handleImageUpload = async (imageFile) => {
     try {
       return await imageCompression(imageFile, {
-        // maxIteration: 32,
         maxIteration: 8,
-        // maxSizeMB: 0.0078125,
         maxSizeMB: 0.03125,
         useWebWorker: true,
       });
@@ -80,24 +76,10 @@ class UserDialog extends React.Component {
 
   render() {
     const { name } = this.props;
-    const { alert, urlFile, loading } = this.state;
+    const { urlFile, loading } = this.state;
+
     return (
-      <Dialog
-        open
-        // TransitionComponent={Transition}
-        keepMounted
-        onClose={this.handleClose}
-      >
-        {alert && (
-          <Alert
-            onClose={() => {
-              this.setState({ alert: null });
-            }}
-            severity="error"
-          >
-            {alert}
-          </Alert>
-        )}
+      <Dialog open keepMounted onClose={this.handleClose}>
         {loading && <Progress />}
         <DialogContent>
           <label htmlFor="icon-button-file">

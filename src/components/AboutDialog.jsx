@@ -1,40 +1,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import {
-  // Slide,
   Dialog,
   DialogContent,
   DialogContentText,
   DialogActions,
   Button,
 } from '@material-ui/core';
+
 import { version } from '../../package.json';
 
-const logo = require(`../unnamed(8).png`);
-// const Transition = React.forwardRef(function Transition({
-//   in: propIn,
-//   timeout,
-//   children,
-// }) {
-//   return (
-//     <Slide direction="up" in={propIn} timeout={timeout}>
-//       {children}
-//     </Slide>
-//   );
-// });
+const logo = require(`../images/vl.png`);
 
 const AboutDialog = ({ handleClose }) => {
   return (
-    <Dialog
-      open
-      // TransitionComponent={Transition}
-      keepMounted
-      onClose={handleClose}
-    >
+    <Dialog open keepMounted onClose={handleClose}>
       <DialogContent>
         <img alt="Virtuala" src={logo} width="208px" />
         <DialogContentText>Campo Minado Online</DialogContentText>
-        <DialogContentText>por ®Virtuala</DialogContentText>
+        <DialogContentText>por Virtualab</DialogContentText>
         <DialogContentText>Versão {version}</DialogContentText>
       </DialogContent>
       <DialogActions>

@@ -14,6 +14,7 @@ class BoardGrid extends Component {
   render() {
     const { grid } = this.state;
     const { loseGame, running, winGame } = this.props;
+
     return (
       <tbody>
         {grid.map((row, idRow) => (
