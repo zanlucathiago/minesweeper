@@ -48,11 +48,11 @@ class LoginDialog extends Component {
             loading: false,
           });
         })
-        .catch(({ response }) => {
-          if (response.status === 404) {
+        .catch((error) => {
+          if (error.response.status === 404) {
             this.setState({ createPIN: true, loading: false });
           } else {
-            alertError(response.data);
+            alertError(error.response.data);
             this.setState({ loading: false });
           }
         });
@@ -83,9 +83,11 @@ class LoginDialog extends Component {
             _id: data._id,
           });
         })
-        .catch(({ response }) => {
+        .catch((error) => {
           alertError(
-            response ? response.data : 'Estamos com problemas no servidor',
+            error.response
+              ? error.response.data
+              : error.message || 'Estamos com problemas no servidor',
           );
 
           this.setState({
@@ -122,9 +124,11 @@ class LoginDialog extends Component {
               checkPIN: false,
             });
           })
-          .catch(({ response }) => {
+          .catch((error) => {
             alertError(
-              response ? response.data : 'Estamos com problemas no servidor.',
+              error.response
+                ? error.response.data
+                : error.message || 'Estamos com problemas no servidor.',
             );
 
             this.setState({

@@ -1,9 +1,11 @@
 import io from 'socket.io-client';
-import feathers from '@feathersjs/client';
-import React, { useContext } from 'react';
+// import feathers from '@feathersjs/client';
+import React, { useContext, useEffect } from 'react';
 import { localBaseURL, remoteBaseURL } from '../config.json';
 import { GlobalContext, GlobalProvider } from '../context/GlobalState';
 import AlertContainer from './AlertContainer';
+import LocalStorage from '../LocalStorage';
+import Actions from '../Actions';
 
 function Listeners({ socket }) {
   const {
@@ -14,18 +16,31 @@ function Listeners({ socket }) {
     setDisconnected,
   } = useContext(GlobalContext);
 
-  socket.on('connect', function() {
-    if (isConnected === false) {
-      alertSuccess('Conectado.');
-    }
+  useEffect(() => {
+    socket.on('connect', function () {
+      if (isConnected === false) {
+        alertSuccess('Conectado.');
+      }
 
-    setConnected();
-  });
+      console.log('Connected');
+      const arr = LocalStorage.getRecords();
 
-  socket.on('disconnect', function() {
-    alertError('Desconectado do servidor.');
-    setDisconnected();
-  });
+      if (arr.length) {
+        Actions.addRecord(arr).then(() => {
+          alertSuccess('Seus recordes foram sincronizados.');
+          LocalStorage.clearRecords();
+        });
+      }
+
+      setConnected();
+    });
+
+    socket.on('disconnect', function () {
+      console.log('disconnected');
+      alertError('Desconectado do servidor.');
+      setDisconnected();
+    });
+  }, []);
 
   return <AlertContainer />;
 }
@@ -34,12 +49,6 @@ function Socket() {
   const socket = io(
     process.env.NODE_ENV === 'development' ? localBaseURL : remoteBaseURL,
   );
-
-  // Init feathers app
-  const app = feathers();
-
-  // Register socket.io to talk to server
-  app.configure(feathers.socketio(socket));
 
   return (
     <GlobalProvider>

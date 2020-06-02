@@ -82,7 +82,7 @@ class Toolbar extends Component {
 
   handleLogout = () => {
     const { logout } = this.props;
-    LocalStorage.setPlayer(null);
+    LocalStorage.setPlayer(null, null);
     this.handleMenuClose();
     logout();
   };

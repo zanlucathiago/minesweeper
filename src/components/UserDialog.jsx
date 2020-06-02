@@ -43,9 +43,11 @@ class UserDialog extends React.Component {
 
     Actions.updatePlayer(data, _id)
       .then(() => handleSave(urlFile))
-      .catch(({ response }) => {
+      .catch((error) => {
         alertError(
-          response ? response.data : 'Estamos com problemas no servidor',
+          error.response
+            ? error.response.data
+            : error.message || 'Estamos com problemas no servidor',
         );
 
         this.setState({

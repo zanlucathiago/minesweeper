@@ -30,6 +30,7 @@ class App extends React.Component {
     this.updateDimensions(size);
 
     this.state = {
+      currentPlayerRecords: [],
       dialog: null,
       grid: this.generateGrid(),
       key: false,
@@ -45,20 +46,23 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    const _id = LocalStorage.getPlayer();
+    const _id = LocalStorage.getPlayer('player');
     this.fetchDisplayRecords();
 
-    Actions.getPlayer({ _id })
-      .then(({ data }) => {
+    if (_id) {
+      if (new URLSearchParams(window.location.search).get('low') !== 'true') {
         this.fetchPicture(_id);
-        this.setState({
-          player: _id,
-          name: data.name,
-          dialog: null,
-          loading: false,
-        });
-      })
-      .catch(this.askForAuth);
+      }
+
+      this.setState({
+        player: _id,
+        name: LocalStorage.getPlayer('name'),
+        dialog: null,
+        loading: false,
+      });
+    } else {
+      this.askForAuth();
+    }
   }
 
   askForAuth = () => {
@@ -385,21 +389,35 @@ class App extends React.Component {
     this.fetchPicture(player);
     alertSuccess('Bom jogo!');
     this.setState({ player, name });
-    LocalStorage.setPlayer(player);
+    LocalStorage.setPlayer(player, name);
     this.fetchDisplayRecords();
     this.closeDialogs();
   };
 
   saveRecord = (performance) => {
-    const { alertError } = this.props;
+    const { alertError, alertSuccess } = this.props;
     const { currentPlayerRecords, player, victory, worldRecord } = this.state;
 
     if (victory) {
-      Actions.addRecord({
+      const record = {
         player,
         performance,
         level: LocalStorage.getLevel(),
-      }).then(() => this.setState({ dialog: 'feedback', loading: false }));
+      };
+
+      Actions.addRecord(record)
+        .then(() => this.setState({ dialog: 'feedback', loading: false }))
+        .catch(() => {
+          alertSuccess(
+            'Você venceu! O seu tempo será sincronizado quando houver conexão.',
+          );
+
+          LocalStorage.addRecord(record);
+
+          this.setState({
+            loading: false,
+          });
+        });
 
       const { length } = currentPlayerRecords;
 

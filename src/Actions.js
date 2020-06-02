@@ -26,7 +26,7 @@ class Actions {
   getRecords = async () =>
     axios.get(
       `/record?${[
-        `_id=${LocalStorage.getPlayer()}`,
+        `_id=${LocalStorage.getPlayer('player')}`,
         `level=${LocalStorage.getLevel()}`,
       ].join('&')}`,
       config,
