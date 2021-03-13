@@ -1,7 +1,6 @@
 import io from 'socket.io-client';
-// import feathers from '@feathersjs/client';
 import React, { useContext, useEffect } from 'react';
-import { localBaseURL, remoteBaseURL } from '../config.json';
+import { remoteBaseURL } from '../config.json';
 import { GlobalContext, GlobalProvider } from '../context/GlobalState';
 import AlertContainer from './AlertContainer';
 import LocalStorage from '../LocalStorage';
@@ -46,9 +45,7 @@ function Listeners({ socket }) {
 }
 
 function Socket() {
-  const socket = io(
-    process.env.NODE_ENV === 'development' ? localBaseURL : remoteBaseURL,
-  );
+  const socket = io(remoteBaseURL);
 
   return (
     <GlobalProvider>
