@@ -7,6 +7,7 @@ import {
   DialogTitle,
   TextField,
 } from '@material-ui/core';
+
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import Actions from '../Actions';
@@ -19,7 +20,11 @@ const numbers = Array(10)
 class FormDialog extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
+      email: '',
+      message: '',
+      name: '',
       phone: '',
     };
   }
@@ -59,11 +64,16 @@ class FormDialog extends Component {
   changeMessage = ({ target }) => this.setState({ message: target.value });
 
   sendMail = () => {
+    const { alertError } = this.props;
     const { name, email, phone, message } = this.state;
     this.setState({ loading: true });
+
     Actions.sendMail({ name, email, phone, message })
       .then(this.finish)
-      .catch();
+      .catch((error) => {
+        alertError(error.message);
+        this.setState({ loading: false });
+      });
   };
 
   finish = ({ data }) => {
@@ -73,13 +83,14 @@ class FormDialog extends Component {
 
   render() {
     const { loading, name, message, email, phone } = this.state;
+
     return (
       <Dialog open onClose={this.handleClose}>
         {loading && <Progress />}
         <DialogTitle>Mensagem</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Envie sugestões, dúvidas, reclamações etc.
+            Envie reclamações, sugestões, dúvidas etc.
           </DialogContentText>
           <TextField
             label="Nome"

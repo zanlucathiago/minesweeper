@@ -1,7 +1,7 @@
 const localStorageKey = 'com.thiagozanluca.minesweeper';
 class LocalStorage {
-  getPlayer() {
-    return this.getFromLocalStorage().player;
+  getPlayer(key) {
+    return this.getFromLocalStorage()[key];
   }
 
   getLevel() {
@@ -12,8 +12,9 @@ class LocalStorage {
     return this.getFromLocalStorage().formats || [];
   }
 
-  setPlayer(value) {
+  setPlayer(value, name) {
     this.setToLocalStorage('player', value);
+    this.setToLocalStorage('name', name);
   }
 
   setLevel(value) {
@@ -22,6 +23,19 @@ class LocalStorage {
 
   setFormats(value) {
     this.setToLocalStorage('formats', value);
+  }
+
+  addRecord(obj) {
+    const arr = this.getFromLocalStorage().records || [];
+    this.setToLocalStorage('records', [...arr, { ...obj, date: new Date() }]);
+  }
+
+  getRecords() {
+    return this.getFromLocalStorage().records || [];
+  }
+
+  clearRecords() {
+    this.setToLocalStorage('records', []);
   }
 
   setToLocalStorage(key, value) {

@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  // Divider,
   Grid,
   IconButton,
   Paper,
@@ -17,7 +16,8 @@ import {
   TableRow,
   Typography,
 } from '@material-ui/core';
-import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+
+import { ToggleButton, ToggleButtonGroup, Rating } from '@material-ui/lab';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 import PropTypes from 'prop-types';
@@ -25,7 +25,6 @@ import React, { Component } from 'react';
 import { FaGlobeAmericas, FaQuestionCircle } from 'react-icons/fa';
 import Actions from '../Actions';
 import LocalStorage from '../LocalStorage';
-import Alert from './Alert';
 import Progress from './Progress';
 
 moment.locale('pt-br');
@@ -33,9 +32,10 @@ moment.locale('pt-br');
 class FeedbackDialog extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
       formats: LocalStorage.getFormats(),
-      data: [],
+      data: [[], []],
       loading: true,
     };
   }
@@ -46,20 +46,29 @@ class FeedbackDialog extends Component {
   }
 
   handleFormat = (e, newFormats) => {
-    this.fetchRecords(newFormats);
     LocalStorage.setFormats(newFormats);
-    this.setState({ formats: newFormats, loading: true });
+    this.setState({ formats: newFormats });
   };
 
   fetchRecords = (newFormats) => {
+    const { alertError, updateRecords } = this.props;
+
     Actions.getRecords(newFormats)
-      .then(({ data }) => this.setState({ data, loading: false }))
-      .catch(({ response }) =>
+      .then(({ data }) => {
+        updateRecords(data[1]);
+        this.setState({ data, loading: false });
+      })
+      .catch((error) => {
+        alertError(
+          error.response
+            ? error.response.data
+            : error.message || 'Estamos com problemas no servidor',
+        );
+
         this.setState({
-          alert: response ? response.data : 'Estamos com problemas no servidor',
           loading: false,
-        }),
-      );
+        });
+      });
   };
 
   handleClose = () => {
@@ -68,34 +77,22 @@ class FeedbackDialog extends Component {
   };
 
   render() {
-    const { alert, alertInfo, data, formats, loading } = this.state;
-    const { content } = this.props;
+    const { data, formats, loading } = this.state;
+    const { alertInfo, content, rating } = this.props;
+
     return (
       <Dialog open onClose={this.handleClose}>
-        {alert && (
-          <Alert
-            onClose={() => this.setState({ alert: null })}
-            severity="error"
-          >
-            {alert}
-          </Alert>
-        )}
-        {alertInfo && (
-          <Alert
-            autoHideDuration={9000}
-            icon={false}
-            onClose={() => this.setState({ alertInfo: null })}
-            severity="info"
-          >
-            {alertInfo}
-          </Alert>
-        )}
         {loading && <Progress />}
         <DialogTitle>
           Ranking {formats[0] !== 'player' ? 'Pessoal' : 'Global'}
         </DialogTitle>
         <DialogContent>
-          {content && <DialogContentText>{content}</DialogContentText>}
+          {content && [
+            <DialogContentText key="performance">{content}</DialogContentText>,
+            <DialogContentText key="rating">
+              <Rating max={rating} name="read-only" value={rating} readOnly />
+            </DialogContentText>,
+          ]}
           <Grid
             style={{
               marginBottom: 8,
@@ -107,50 +104,19 @@ class FeedbackDialog extends Component {
               <ToggleButton style={{ height: 32 }} value="player">
                 <FaGlobeAmericas />
               </ToggleButton>
-              {/* <ToggleButton style={{ height: 32 }} value="date">
-                <FaInfinity />
-              </ToggleButton> */}
             </ToggleButtonGroup>
             <IconButton
               onClick={() =>
-                this.setState({
-                  alertInfo: (
-                    <Grid container>
-                      {/* <Grid
-                        item
-                        xs={2}
-                        style={{ margin: 'auto', textAlign: 'center' }}
-                      >
-                        <FaGlobeAmericas />
-                      </Grid> */}
-                      {/* <Grid item xs={10}> */}
-                      <Grid item>
-                        <Typography>
-                          Ranking dinâmico com performances relevantes.
-                        </Typography>
-                      </Grid>
-                      {/* <Grid item xs={12}>
-                        <Divider
-                          style={{ backgroundColor: '#FFF', margin: 8 }}
-                          variant="middle"
-                        />
-                      </Grid>
-                      <Grid
-                        item
-                        xs={2}
-                        style={{ margin: 'auto', textAlign: 'center' }}
-                      >
-                        <FaInfinity />
-                      </Grid>
-                      <Grid item xs={10}>
-                        <Typography>
-                          Escolher entre listar recordes do último dia ou de
-                          todos os dias.
-                        </Typography>
-                      </Grid> */}
+                alertInfo(
+                  <Grid container>
+                    <Grid item>
+                      <Typography>
+                        Ranking dinâmico com performances relevantes.
+                      </Typography>
                     </Grid>
-                  ),
-                })
+                  </Grid>,
+                  { autoHideDuration: 9000, icon: false },
+                )
               }
               style={{ position: 'absolute', padding: 4, right: 0 }}
             >
@@ -168,7 +134,7 @@ class FeedbackDialog extends Component {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data.map((row, index) => (
+                {data[formats[0] !== 'player' ? 1 : 0].map((row, index) => (
                   <TableRow key={row._id}>
                     <TableCell align="right">{index + 1}</TableCell>
                     <TableCell component="th" scope="row">
@@ -182,9 +148,7 @@ class FeedbackDialog extends Component {
                         .format('mm:ss.SSS')}
                     </TableCell>
                     <TableCell align="right">
-                      {/* {moment(row.date).format('DD/MM/YYYY HH:mm')} */}
                       {moment(row.date).calendar()}
-                      {/* {moment(row.date).format('LLLL')} */}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -209,13 +173,11 @@ class FeedbackDialog extends Component {
 
 FeedbackDialog.defaultProps = {
   content: '',
-  title: '',
 };
 
 FeedbackDialog.propTypes = {
   content: PropTypes.string,
   handleClose: PropTypes.func.isRequired,
-  title: PropTypes.string,
 };
 
 export default FeedbackDialog;

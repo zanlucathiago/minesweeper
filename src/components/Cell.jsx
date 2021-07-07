@@ -1,21 +1,22 @@
 import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import React, { Component, useContext } from 'react';
 import { FaBomb } from 'react-icons/fa';
 import { IoIosFlag } from 'react-icons/io';
 import helper from '../helper';
+import { GlobalContext } from '../context/GlobalState';
 
 const colors = ['#000', '#3b71ff', '#417c03', '#ed4f1d', '#193680'];
 
-class Cell extends Component {
+class ComponentImpl extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
       flag: false,
       open: false,
     };
   }
 
-  // eslint-disable-next-line
   UNSAFE_componentWillReceiveProps(nextProps) {
     if (!this.open && nextProps.cell.open) {
       this.recursiveOpener();
@@ -24,7 +25,6 @@ class Cell extends Component {
 
   setBackgroundColor = () => {
     const { cell } = this.props;
-    // const { guessBomb, noBomb, open } = cell;
 
     if (!cell.open) {
       if (cell.noBomb) {
@@ -52,19 +52,14 @@ class Cell extends Component {
     if (!open && !flag && running) {
       this.open = true;
       this.setState({ open: true });
-      // openingPostScripts();
-
-      // const { grid } = this.state;
-
       cell.open = true;
       cell.isWild = false;
+
       if (cell.bomb) {
         helper.setSquaresOpened(0);
         helper.setTotalGuesses(0);
         return loseGame();
-        // return loseGame(false);
       }
-      // cell.isWild = false;
 
       if (helper.getTotalGuesses()) {
         refreshBoard();
@@ -84,7 +79,6 @@ class Cell extends Component {
         helper.getRows() * helper.getColumns() - helper.getBombs()
       ) {
         helper.setSquaresOpened(0);
-        // this.totalGuesses = 0;
         return winGame();
       }
 
@@ -143,11 +137,16 @@ class Cell extends Component {
     const { flag } = this.state;
     return (
       <td
-        // key={cell}
         onClick={() => {
           this.recursiveOpener();
         }}
         onContextMenu={(e) => {
+          if (cell.flag) {
+            this.props.removeFlag();
+          } else {
+            this.props.addFlag();
+          }
+
           cell.flag = !cell.flag;
           this.setState({ flag: !flag });
           e.preventDefault();
@@ -170,12 +169,16 @@ class Cell extends Component {
   }
 }
 
-Cell.defaultProps = {
+function Cell(props) {
+  const { removeFlag, addFlag } = useContext(GlobalContext);
+  return <ComponentImpl removeFlag={removeFlag} addFlag={addFlag} {...props} />;
+}
+
+ComponentImpl.defaultProps = {
   guessBomb: null,
 };
 
-Cell.propTypes = {
-  // backgroundColor: PropTypes.string.isRequired,
+ComponentImpl.propTypes = {
   cell: PropTypes.exact({
     flag: PropTypes.bool,
     guessBomb: PropTypes.number,
@@ -184,10 +187,13 @@ Cell.propTypes = {
     bomb: PropTypes.bool,
     number: PropTypes.number,
   }).isRequired,
-  // changeVictory: PropTypes.func.isRequired,
   guessBomb: PropTypes.number,
-  openingPostScripts: PropTypes.func.isRequired,
+  loseGame: PropTypes.func.isRequired,
+  openAround: PropTypes.func.isRequired,
+  refreshBoard: PropTypes.func.isRequired,
   running: PropTypes.bool.isRequired,
+  updateWilds: PropTypes.func.isRequired,
+  winGame: PropTypes.func.isRequired,
 };
 
 export default Cell;

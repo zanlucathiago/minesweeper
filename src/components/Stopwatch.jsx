@@ -14,7 +14,6 @@ class Stopwatch extends Component {
     };
   }
 
-  // eslint-disable-next-line
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { running } = this.state;
     if (nextProps.running && !running) {
@@ -25,23 +24,24 @@ class Stopwatch extends Component {
   }
 
   displayTime = () => {
-    this.counter = this.counter + 1;
+    this.counter += 1000;
     this.setState({
       time: this.formatTime(this.counter),
     });
   };
 
-  formatTime = (seconds) =>
+  formatTime = (milliseconds) =>
     moment()
       .hour(0)
       .minute(0)
-      .second(seconds)
-      .format('HH : mm : ss');
+      .second(0)
+      .millisecond(milliseconds)
+      .format('mm:ss.SSS');
 
   startWatch() {
     this.startTime = performance.now();
-    // this.runClock = setInterval(this.displayTime, 1000);
-    this.setState({ running: true });
+    this.runClock = setInterval(this.displayTime, 1000);
+    this.setState({ running: true, time: this.formatTime(0) });
   }
 
   stopWatch() {
@@ -49,19 +49,20 @@ class Stopwatch extends Component {
     this.endTime = performance.now();
     this.counter = 0;
     clearInterval(this.runClock);
-    this.setState({ running: false, time: this.formatTime(0) });
-    // this.props.openFeedback(this.endTime - this.startTime);
-    saveRecord(this.endTime - this.startTime);
+    const currPerformance = this.endTime - this.startTime;
+    this.setState({ running: false, time: this.formatTime(currPerformance) });
+    saveRecord(currPerformance);
   }
 
   render() {
     const { time } = this.state;
     return (
       <TextField
+        inputProps={{ min: 0, style: { textAlign: 'center' } }}
         disabled
         label="Tempo"
         size="small"
-        style={{ width: 108 }}
+        style={{ width: 100 }}
         value={time}
         variant="outlined"
       />
@@ -69,9 +70,14 @@ class Stopwatch extends Component {
   }
 }
 
+Stopwatch.defaultProps = {
+  running: false,
+  saveRecord: () => {},
+};
+
 Stopwatch.propTypes = {
-  running: PropTypes.bool.isRequired,
-  saveRecord: PropTypes.func.isRequired,
+  running: PropTypes.bool,
+  saveRecord: PropTypes.func,
 };
 
 export default Stopwatch;
